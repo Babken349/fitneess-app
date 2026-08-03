@@ -9,7 +9,7 @@ class AppError(Exception):
 class UserNotFoundError(AppError):
     def __init__(self, user_id: int):
         self.user_id = user_id
-        super().__init__(f"Бро чела с id={user_id} нет!")
+        super().__init__(f"Бро человека в базе данных с id={user_id} нет!")
 
 
 class EmailAlreadyExistsError(AppError):
@@ -30,3 +30,10 @@ class InvalidPasswordError(AppError):
 class InvalidCredentialsError(AppError):
     def __init__(self):
         super().__init__("Неверный логин или пароль")
+
+class ForbiddenError(AppError):
+    def __init__(self):
+        super().__init__("У вас недостаточно прав для выполнения этого действия")
+class EmailNotVerifiedError(AppError):
+    def __init__(self):
+        super().__init__("У вас не подтвержден email")

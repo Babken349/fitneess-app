@@ -13,3 +13,5 @@ from app.models.achievement import Achievement
 from app.models.friendship import Friendship
 from app.models.reminder import Reminder
 from app.models.refresh_token import RefreshToken
+from app.models.email_verification_token import EmailVerificationToken
+from app.models.password_reset_token import PasswordResetToken

@@ -1,4 +1,7 @@
 from datetime import datetime
+from email.policy import default
+from logging import RootLogger
+from tokenize import StringPrefix
 from typing import TYPE_CHECKING
 
 from sqlalchemy import String, Integer, Boolean, func, DateTime
@@ -20,6 +23,7 @@ class User(Base):
     login: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(255), nullable=False, default="user")
 
     display_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(255), nullable=True)

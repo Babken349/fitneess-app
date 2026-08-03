@@ -35,7 +35,9 @@ def create_refresh_token(*, user_id: int) -> tuple[str, str, datetime]:
 
 
 def decode_token(token: str) -> dict:
-    """Расшифровывает любой токен. Кидает 401, если токен протух или поддельный."""
+    """Расшифровывает любой токен. Кидает 401, если токен протух или поддельный.
+        if/else проверяет ожидаемые состояния программы.
+        try/except перехватывает исключения (Exceptions), которые были вызваны где-то внутри."""
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return payload
