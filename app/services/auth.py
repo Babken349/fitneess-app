@@ -22,7 +22,7 @@ def login(db: Session, credentials: UserLogin) -> Token:
     if not password_manager.verify(credentials.password, user.hashed_password):
         raise InvalidCredentialsError()
 
-    access_token = create_access_token(user_id=user.id)
+    access_token = create_access_token(user_id=user.id, role=user.role)
     refresh_token, jti, expires_at = create_refresh_token(user_id=user.id)
 
     # Репозиторий только добавляет в сессию

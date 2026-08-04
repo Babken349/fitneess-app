@@ -10,7 +10,7 @@ from app.models.users import User
 # Импортируем нужные сервисы
 from app.services import auth
 from app.services import email_service
-from app.services import password_reset_service  # Убедись, что функции сброса лежат тут!
+from app.services import password_reset_service
 
 router = APIRouter()
 

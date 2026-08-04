@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from app.api.v1.users import router as users_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.exercise import router as exercise_router
 from fastapi.responses import JSONResponse 
 from app.exceptions import (
     AppError,
@@ -48,8 +49,9 @@ async def forbidden_error_handler(request: Request, exc: ForbiddenError):
     return JSONResponse(status_code=403, content={"detail": str(exc)})
 
 @app.exception_handler(EmailNotVerifiedError)
-async def forbidden_error_handler(request: Request, exc: EmailNotVerifiedError):
+async def email_not_verified_handler(request: Request, exc: EmailNotVerifiedError):
     return JSONResponse(status_code=403, content={"detail": str(exc)})
 
 app.include_router(users_router, prefix="/api/v1/users", tags=["users"])
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(exercise_router, prefix="/api/v1/exercise", tags=["exercise"])

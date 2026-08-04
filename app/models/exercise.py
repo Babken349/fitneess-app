@@ -1,5 +1,4 @@
 from datetime import datetime
-from socket import J1939_PGN_ADDRESS_CLAIMED
 from tkinter import LabelFrame
 from typing import List, Optional
 from sqlalchemy import String, Integer, DateTime, func, Boolean, ForeignKey

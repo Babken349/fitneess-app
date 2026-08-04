@@ -3,7 +3,7 @@ from app.models.supplements import Supplement
 from app.models.user_supplements import UserSupplement
 from app.models.workout_program import WorkoutProgram
 from app.models.workout_day import WorkoutDay
-from app.models.exercise import Exercise
+from app.models.exercise import Exercise, MuscleGroup, Equipment
 from app.models.workout_exercise import WorkoutExercise
 from app.models.workout_session import WorkoutSession
 from app.models.exercise_log import ExerciseLog

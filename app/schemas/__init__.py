@@ -1,0 +1,1 @@
+from app.schemas.exercise import ExerciseCreate, ExerciseUpdate, ExerciseResponse

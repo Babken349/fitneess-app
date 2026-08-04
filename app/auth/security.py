@@ -4,7 +4,7 @@ import jwt
 from fastapi import HTTPException, status
 from app.core.config import settings
 
-def create_access_token(*, user_id: int, role: str = "user") -> str:
+def create_access_token(*, user_id: int, role: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     
