@@ -11,6 +11,10 @@ from app.exceptions import (
     InvalidPasswordError,
     ForbiddenError,
     EmailNotVerifiedError,
+    ExerciseNotFoundError,
+    ExerciseAlreadyExistsError,
+    MuscleGroupNotFoundError,
+    EquipmentNotFoundError,
 )
 
 app = FastAPI()
@@ -42,7 +46,21 @@ async def app_error_handler(request: Request, exc: AppError):
     # для которой не зарегистрирован персональный handler выше
     return JSONResponse(status_code=400, content={"detail": str(exc)})
 
+@app.exception_handler(ExerciseNotFoundError)
+async def exercise_not_found_handler(request: Request, exc: ExerciseNotFoundError):
+    return JSONResponse(status_code=404, content={"detail": str(exc)})
 
+@app.exception_handler(MuscleGroupNotFoundError)
+async def muscle_group_not_found_handler(request: Request, exc: MuscleGroupNotFoundError):
+    return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+@app.exception_handler(EquipmentNotFoundError)
+async def equipment_not_found_handler(request: Request, exc: EquipmentNotFoundError):
+    return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+@app.exception_handler(ExerciseAlreadyExistsError)
+async def exercise_exists_handler(request: Request, exc: ExerciseAlreadyExistsError):
+    return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 @app.exception_handler(ForbiddenError)
 async def forbidden_error_handler(request: Request, exc: ForbiddenError):

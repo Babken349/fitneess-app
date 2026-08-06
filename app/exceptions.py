@@ -37,3 +37,31 @@ class ForbiddenError(AppError):
 class EmailNotVerifiedError(AppError):
     def __init__(self):
         super().__init__("У вас не подтвержден email")
+
+
+
+class ExerciseNotFoundError(AppError):
+    def __init__(self, exercise_id: int):
+        self.exercise_id = exercise_id
+        super().__init__(f"Упражнения с id={exercise_id} в базе нет, бро!")
+
+class ExerciseAlreadyExistsError(AppError):
+    def __init__(self, name: str):
+        self.name = name
+        super().__init__(f"Упражнение '{name}' уже существует в справочнике, дружище")
+
+class MuscleGroupNotFoundError(AppError):
+    def __init__(self, muscle_group_id: int):
+        self.muscle_group_id = muscle_group_id
+        super().__init__(f"Группы мышц с id={muscle_group_id} не найдено!")
+
+class EquipmentNotFoundError(AppError):
+    def __init__(self, equipment_id: int):
+        self.equipment_id = equipment_id
+        super().__init__(f"Оборудования с id={equipment_id} не найдено!")
+
+
+class ProgramNotFoundError(AppError):
+    def __init__(self, program_id: int):
+        self.program_id = program_id
+        super().__init__(f"Программы с id={program_id} не найдено!")

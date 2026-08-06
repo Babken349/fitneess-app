@@ -15,10 +15,12 @@ class WorkoutProgramUpdate(BaseModel):
 
 
 class WorkoutProgramResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     user_id: int
     name: StrippedStr = Field(..., max_length=100)
     description: StrippedStr | None = Field(None, max_length=255)
     is_public: bool = False
+    is_archived: bool = False
     created_at: datetime
     updated_at: datetime

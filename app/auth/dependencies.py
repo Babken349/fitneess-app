@@ -1,5 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from app.core.database import SessionLocal
 from sqlalchemy.orm import Session
 from app.core.enums import UserRole
 from app.core.dependency import get_db
@@ -7,7 +8,7 @@ from app.auth.security import decode_token
 from app.models.users import User
 from app.repository import users as users_repository
 from app.exceptions import ForbiddenError, EmailNotVerifiedError
-from datetime import datetime, timezone
+
 security = HTTPBearer()
 
 def get_current_user(
