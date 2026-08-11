@@ -8,7 +8,7 @@ class WorkoutSessionCreate(BaseModel):
 
 class WorkoutSessionUpdate(BaseModel):
     finished_at: datetime | None = None # Тренировка заканчивается проставлением времени конца
-    notes: StrippedStr | None = Field(None, max_length=1000)
+    notes: StrippedStr | None = Field(None, maxww_length=1000)
 
 class WorkoutSessionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
