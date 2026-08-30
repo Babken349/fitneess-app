@@ -56,23 +56,28 @@ def refresh_token(db: Session, token_data: RefreshTokenRequest) -> Token:
     if token_db is None or token_db.revoked:
         raise InvalidCredentialsError()
 
-    # Репозиторий меняет поля
+    # 1. Юзер для роли
+    user = users_repository.get_user_by_id(db, int(user_id))
+    if user is None:
+        raise InvalidCredentialsError()
+
+    # 2. Отзываем старый токен
     refresh_repository.revoke(db, token_db)
 
-    access_token = create_access_token(user_id=int(user_id))
-    refresh_token, new_jti, expires_at = create_refresh_token(user_id=int(user_id))
+    # 3. Создаем новые токены, передавая роль юзера!
+    access_token = create_access_token(user_id=user.id, role=user.role)
+    new_refresh_token, new_jti, expires_at = create_refresh_token(user_id=user.id)
 
     refresh_repository.create_refresh_token(
         db=db,
-        user_id=int(user_id),
+        user_id=user.id,
         jti=new_jti,
         expires_at=expires_at
     )
 
-    
     db.commit()
 
-    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
+    return Token(access_token=access_token, refresh_token=new_refresh_token, token_type="bearer")
 
 
 def logout(db: Session, token: RefreshTokenRequest):

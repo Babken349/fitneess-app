@@ -1,5 +1,5 @@
 from datetime import datetime
-from utils.validators import StrippedStr
+from app.utils.validators import StrippedStr
 from pydantic import BaseModel, Field, ConfigDict
 
 class SupplementCreate(BaseModel):

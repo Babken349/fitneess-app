@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, ConfigDict
 
-from utils.validators import StrippedStr
+from app.utils.validators import StrippedStr
 
 
 class ExerciseCreate(BaseModel):

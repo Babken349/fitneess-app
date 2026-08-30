@@ -2,10 +2,10 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, ConfigDict
 
-from utils.validators import StrippedStr
+from app.utils.validators import StrippedStr
 
 
-class WorkoutProgramCreate(BaseModel):
+class CreateWorkoutProgram(BaseModel):
     name: StrippedStr = Field(
         ...,
         min_length=1,

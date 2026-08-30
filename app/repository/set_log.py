@@ -1,5 +1,3 @@
-# app/repository/set_log.py
-
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 

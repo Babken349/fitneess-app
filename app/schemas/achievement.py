@@ -1,23 +1,32 @@
 from datetime import datetime
-from utils.validators import StrippedStr
+
 from pydantic import BaseModel, Field, ConfigDict
 
+from app.utils.validators import StrippedStr
+
+
 class AchievementCreate(BaseModel):
-    title: StrippedStr = Field(..., max_length=100)
-    description: StrippedStr | None = Field(None, max_length=255)
-    icon: StrippedStr | None = Field(None, max_length=255)
+    name: StrippedStr = Field(..., min_length=1, max_length=100)
+    description: StrippedStr | None = Field(default=None, max_length=500)
+    code: StrippedStr = Field(..., min_length=1, max_length=100)
+    icon_url: str | None = None
+
 
 class AchievementUpdate(BaseModel):
-    title: StrippedStr | None = Field(None, max_length=100)
-    description: StrippedStr | None = Field(None, max_length=255)
-    icon: StrippedStr | None = Field(None, max_length=255)
+    name: StrippedStr | None = Field(default=None, min_length=1, max_length=100)
+    description: StrippedStr | None = Field(default=None, max_length=500)
+    code: StrippedStr | None = Field(default=None, min_length=1, max_length=100)
+    icon_url: str | None = None
+    is_active: bool | None = None
+
 
 class AchievementResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: int
-    title: StrippedStr = Field(..., max_length=100)
-    description: StrippedStr | None = Field(None, max_length=255)
-    icon: StrippedStr | None = Field(None, max_length=255)
+    name: str
+    description: str | None
+    code: str
+    icon_url: str | None
+    is_active: bool
     created_at: datetime
-    updated_at: datetime

@@ -15,7 +15,7 @@ class Reminder(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    user_supplement_id: Mapped[int | None] = mapped_column(ForeignKey("user_supplements.id"), nullable=True)
+    user_supplement_id: Mapped[int] = mapped_column(ForeignKey("user_supplements.id"), nullable=False)
 
     day_of_week: Mapped[int] = mapped_column(Integer, nullable=False)  # 0=понедельник, 6=воскресенье
     time_of_day: Mapped[time] = mapped_column(Time, nullable=False)     # 16:00:00

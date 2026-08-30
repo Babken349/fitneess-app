@@ -35,7 +35,6 @@ def request_verification_token(db: Session, user: User) -> EmailVerificationToke
 
 
 def verify_email(db: Session, token_string: str) -> dict:
-    # Проверку if token_string is None убрали — Pydantic в схеме VerifyEmail уже это сделал!
     
     # 1. Ищем токен
     token_db = email_repository.get_by_token(db=db, token_string=token_string)

@@ -12,9 +12,10 @@ if TYPE_CHECKING:
     from app.models.workout_program import WorkoutProgram
     from app.models.workout_session import WorkoutSession
     from app.models.body_weight import BodyWeight
-    from app.models.achievement import Achievement
+    from app.models.user_achievement import UserAchievement
     from app.models.user_supplements import UserSupplement
-
+    from app.models.body_measurement import BodyMeasurement
+    from app.models.progress_photo import ProgressPhoto
 
 class User(Base):
     __tablename__ = "users"
@@ -42,18 +43,32 @@ class User(Base):
         cascade="all, delete-orphan",
     )
     workout_sessions: Mapped[list["WorkoutSession"]] = relationship(
-    back_populates="user",
-    cascade="all, delete-orphan",
+        back_populates="user",
+        cascade="all, delete-orphan",
     )
     body_weights: Mapped[list["BodyWeight"]] = relationship(
-    back_populates="user",
-    cascade="all, delete-orphan",
+        back_populates="user",
+        cascade="all, delete-orphan",
     )
-    achievements: Mapped[list["Achievement"]] = relationship(
+    achievements: Mapped[list["UserAchievement"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
     )
     supplements: Mapped[list["UserSupplement"]] = relationship(
-    back_populates="user",
-    cascade="all, delete-orphan",
-)
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    body_measurements: Mapped[list["BodyMeasurement"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        order_by="BodyMeasurement.recorded_at",
+    )
+    progress_photos: Mapped[list["ProgressPhoto"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        order_by="ProgressPhoto.recorded_at",
+    )
+    email_verification_tokens: Mapped[list["EmailVerificationToken"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )

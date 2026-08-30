@@ -9,7 +9,10 @@ from app.models.workout_session import WorkoutSession
 from app.models.exercise_log import ExerciseLog
 from app.models.set_log import SetLog
 from app.models.body_weight import BodyWeight
+from app.models.body_measurement import BodyMeasurement
+from app.models.progress_photo import ProgressPhoto
 from app.models.achievement import Achievement
+from app.models.user_achievement import UserAchievement
 from app.models.friendship import Friendship
 from app.models.reminder import Reminder
 from app.models.refresh_token import RefreshToken

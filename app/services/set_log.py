@@ -92,7 +92,8 @@ class SetLogService:
             set_number=data.set_number,
             actual_reps=data.actual_reps,
             actual_weight=data.actual_weight,
-            rpe=data.rpe,
+            rir=data.rir,
+            completed=data.completed,
         )
 
         self.set_repo.create(

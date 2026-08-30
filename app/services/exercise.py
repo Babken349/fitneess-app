@@ -3,14 +3,14 @@ from sqlalchemy.orm import Session
 from app.models.exercise import Exercise
 from app.repository.exercise import ExerciseRepository
 from app.schemas.exercise import ExerciseCreate, ExerciseUpdate
-
+from app.repository.muscle_group import MuscleGroupRepository
+from app.repository.equipment import EquipmentRepository  
 from app.exceptions import (
     ExerciseNotFoundError,
     ExerciseAlreadyExistsError,
     MuscleGroupNotFoundError,
     EquipmentNotFoundError,
 )
-from app.repository.exercise import MuscleGroupRepository, EquipmentRepository
 
 
 class ExerciseService:
@@ -19,7 +19,6 @@ class ExerciseService:
         self.exercise_repo = ExerciseRepository()
         self.muscle_group_repo = MuscleGroupRepository()
         self.equipment_repo = EquipmentRepository()
-
     # =========================
     # CREATE
     # =========================
@@ -41,25 +40,27 @@ class ExerciseService:
                 exercise_data.name
             )
 
-        muscle_group = self.muscle_group_repo.get_muscle_group_by_id(
+        muscle_group = self.muscle_group_repo.get_by_id(
             db,
             exercise_data.muscle_group_id,
         )
+        if exercise_data.muscle_group_id is not None:
+            if not muscle_group:
+                raise MuscleGroupNotFoundError(
+                    exercise_data.muscle_group_id
+                )
 
-        if not muscle_group:
-            raise MuscleGroupNotFoundError(
-                exercise_data.muscle_group_id
+
+        if exercise_data.equipment_id is not None:
+            equipment = self.equipment_repo.get_equipment_by_id(
+                db,
+                exercise_data.equipment_id,
             )
 
-        equipment = self.equipment_repo.get_equipment_by_id(
-            db,
-            exercise_data.equipment_id,
-        )
-
-        if not equipment:
-            raise EquipmentNotFoundError(
-                exercise_data.equipment_id
-            )
+            if not equipment:
+                raise EquipmentNotFoundError(
+                    exercise_data.equipment_id
+                )
 
         exercise_db = Exercise(
             name=exercise_data.name,
@@ -154,7 +155,7 @@ class ExerciseService:
 
         if "muscle_group_id" in update_data:
 
-            muscle_group = self.muscle_group_repo.get_muscle_group_by_id(
+            muscle_group = self.muscle_group_repo.get_by_id(
                 db,
                 update_data["muscle_group_id"],
             )
@@ -307,7 +308,7 @@ class ExerciseService:
         limit: int = 20,
     ) -> list[Exercise]:
 
-        muscle_group = self.muscle_group_repo.get_muscle_group_by_id(
+        muscle_group = self.muscle_group_repo.get_by_id(
             db,
             muscle_group_id,
         )
@@ -366,7 +367,7 @@ class ExerciseService:
         limit: int = 20,
     ) -> list[Exercise]:
 
-        muscle_group = self.muscle_group_repo.get_muscle_group_by_id(
+        muscle_group = self.muscle_group_repo.get_by_id(
             db,
             muscle_group_id,
         )

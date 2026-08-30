@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict
-from utils.validators import StrippedStr
+from app.utils.validators import StrippedStr
 
 
 class ExerciseLogCreate(BaseModel):

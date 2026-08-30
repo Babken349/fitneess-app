@@ -7,8 +7,8 @@ from app.auth.dependencies import get_current_user
 from app.schemas.workout_program import (
     CreateWorkoutProgram,
     WorkoutProgramUpdate,
-    WorkoutSessionResponse,
 )
+from app.schemas.workout_session import WorkoutSessionResponse
 from app.models.users import User
 from app.services.workout_program import ProgramService
 
