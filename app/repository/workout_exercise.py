@@ -1,24 +1,25 @@
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.workout_exercise import WorkoutExercise
 
 
 class WorkoutExerciseRepository:
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         workout_exercise_id: int,
     ) -> WorkoutExercise | None:
         stmt = select(WorkoutExercise).where(
             WorkoutExercise.id == workout_exercise_id
         )
-        return db.execute(stmt).scalar_one_or_none()
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_by_day(
+    async def get_by_day(
         self,
-        db: Session,
+        db: AsyncSession,
         workout_day_id: int,
     ) -> list[WorkoutExercise]:
         stmt = (
@@ -29,11 +30,12 @@ class WorkoutExerciseRepository:
             .order_by(WorkoutExercise.exercise_order)
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def get_by_order_and_day(
+    async def get_by_order_and_day(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_order: int,
         workout_day_id: int,
     ) -> WorkoutExercise | None:
@@ -42,11 +44,12 @@ class WorkoutExerciseRepository:
             WorkoutExercise.workout_day_id == workout_day_id,
         )
 
-        return db.execute(stmt).scalar_one_or_none()
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_by_exercise_and_day(
+    async def get_by_exercise_and_day(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_id: int,
         workout_day_id: int,
     ) -> WorkoutExercise | None:
@@ -55,11 +58,12 @@ class WorkoutExerciseRepository:
             WorkoutExercise.workout_day_id == workout_day_id,
         )
 
-        return db.execute(stmt).scalar_one_or_none()
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
 
     def create(
         self,
-        db: Session,
+        db: AsyncSession,
         workout_exercise: WorkoutExercise,
     ) -> WorkoutExercise:
         db.add(workout_exercise)
@@ -71,9 +75,9 @@ class WorkoutExerciseRepository:
     ) -> WorkoutExercise:
         return workout_exercise
 
-    def delete(
+    async def delete(
         self,
-        db: Session,
+        db: AsyncSession,
         workout_exercise: WorkoutExercise,
     ) -> None:
-        db.delete(workout_exercise)
+        await db.delete(workout_exercise)

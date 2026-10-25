@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import secrets
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.email_verification_token import EmailVerificationToken
 from app.models.users import User
@@ -28,13 +28,13 @@ class EmailVerificationService:
         self.token_repo = RepositoryEmailVerification()
         self.email_service = EmailService()
 
-    def create_verification_token(
+    async def create_verification_token(
         self,
-        db: Session,
+        db: AsyncSession,
         user: User,
     ) -> EmailVerificationToken:
 
-        self.token_repo.delete_active_by_user(
+        await self.token_repo.delete_active_by_user(
             db,
             user.id,
         )
@@ -54,21 +54,21 @@ class EmailVerificationService:
             verification_token,
         )
 
-        db.commit()
-        db.refresh(verification_token)
+        await db.commit()
+        await db.refresh(verification_token)
 
         return verification_token
 
     async def send_verification_email(
         self,
-        db: Session,
+        db: AsyncSession,
         user: User,
     ):
 
         if user.is_verified:
             raise EmailAlreadyVerifiedError()
 
-        verification_token = self.create_verification_token(
+        verification_token = await self.create_verification_token(
             db,
             user,
         )
@@ -104,14 +104,14 @@ class EmailVerificationService:
             """,
         )
 
-    def verify_email(
+    async def verify_email(
         self,
-        db: Session,
+        db: AsyncSession,
         token: str,
     ) -> User:
 
         verification_token = (
-            self.token_repo.get_by_token(
+            await self.token_repo.get_by_token(
                 db,
                 token,
             )
@@ -128,7 +128,7 @@ class EmailVerificationService:
         ):
             raise EmailVerificationTokenExpiredError()
 
-        user = users_repository.get_user_by_id(
+        user = await users_repository.get_user_by_id(
             db,
             verification_token.user_id,
         )
@@ -146,7 +146,7 @@ class EmailVerificationService:
             verification_token
         )
 
-        db.commit()
-        db.refresh(user)
+        await db.commit()
+        await db.refresh(user)
 
         return user

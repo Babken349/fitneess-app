@@ -1,5 +1,5 @@
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.reminder import Reminder
 
@@ -8,7 +8,7 @@ class ReminderRepository:
 
     def create(
         self,
-        db: Session,
+        db: AsyncSession,
         reminder: Reminder,
     ) -> Reminder:
 
@@ -23,17 +23,17 @@ class ReminderRepository:
 
         return reminder
 
-    def delete(
+    async def delete(
         self,
-        db: Session,
+        db: AsyncSession,
         reminder: Reminder,
     ) -> None:
 
-        db.delete(reminder)
+        await db.delete(reminder)
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         reminder_id: int,
     ) -> Reminder | None:
 
@@ -41,11 +41,12 @@ class ReminderRepository:
             Reminder.id == reminder_id
         )
 
-        return db.execute(stmt).scalar_one_or_none()
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_by_user(
+    async def get_by_user(
         self,
-        db: Session,
+        db: AsyncSession,
         user_id: int,
         skip: int = 0,
         limit: int = 20,
@@ -60,11 +61,12 @@ class ReminderRepository:
             .limit(limit)
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def get_by_user_supplement(
+    async def get_by_user_supplement(
         self,
-        db: Session,
+        db: AsyncSession,
         user_supplement_id: int,
         skip: int = 0,
         limit: int = 20,
@@ -80,11 +82,12 @@ class ReminderRepository:
             .limit(limit)
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def get_active_by_user(
+    async def get_active_by_user(
         self,
-        db: Session,
+        db: AsyncSession,
         user_id: int,
     ) -> list[Reminder]:
 
@@ -96,11 +99,12 @@ class ReminderRepository:
             )
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def get_active_by_user_supplement(
+    async def get_active_by_user_supplement(
         self,
-        db: Session,
+        db: AsyncSession,
         user_supplement_id: int,
     ) -> list[Reminder]:
 
@@ -113,16 +117,17 @@ class ReminderRepository:
             )
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def exists_duplicate(
-    self,
-    db: Session,
-    user_id: int,
-    user_supplement_id: int | None,
-    day_of_week: int,
-    time_of_day,
-    exclude_id: int | None = None,
+    async def exists_duplicate(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        user_supplement_id: int | None,
+        day_of_week: int,
+        time_of_day: str,
+        exclude_id: int | None = None,
     ) -> bool:
 
         stmt = select(Reminder.id).where(
@@ -131,11 +136,10 @@ class ReminderRepository:
             Reminder.day_of_week == day_of_week,
             Reminder.time_of_day == time_of_day,
             Reminder.is_active.is_(True),
-        )
+        ).limit(1)
 
         if exclude_id is not None:
-            stmt = stmt.where(
-                Reminder.id != exclude_id
-            )
+            stmt = stmt.where(Reminder.id != exclude_id)
 
-        return db.execute(stmt).scalar_one_or_none() is not None
+        result = await db.execute(stmt)
+        return result.first() is not None

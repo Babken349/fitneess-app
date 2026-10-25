@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.supplements import Supplement
 from app.schemas.supplements import SupplementCreate, SupplementUpdate
@@ -20,13 +20,13 @@ class SupplementService:
     # CREATE
     # =========================
 
-    def create_supplement(
+    async def create_supplement(
         self,
-        db: Session,
+        db: AsyncSession,
         data: SupplementCreate,
     ) -> Supplement:
 
-        if self.supplement_repo.exists_by_name(
+        if await self.supplement_repo.exists_by_name(
             db,
             data.name,
         ):
@@ -45,8 +45,8 @@ class SupplementService:
             supplement,
         )
 
-        db.commit()
-        db.refresh(supplement)
+        await db.commit()
+        await db.refresh(supplement)
 
         return supplement
 
@@ -54,13 +54,13 @@ class SupplementService:
     # GET BY ID
     # =========================
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         supplement_id: int,
     ) -> Supplement:
 
-        supplement = self.supplement_repo.get_by_id(
+        supplement = await self.supplement_repo.get_by_id(
             db,
             supplement_id,
         )
@@ -76,14 +76,14 @@ class SupplementService:
     # GET ALL
     # =========================
 
-    def get_all(
+    async def get_all(
         self,
-        db: Session,
+        db: AsyncSession,
         skip: int = 0,
         limit: int = 20,
     ) -> list[Supplement]:
 
-        return self.supplement_repo.get_all(
+        return await self.supplement_repo.get_all(
             db,
             skip,
             limit,
@@ -93,14 +93,14 @@ class SupplementService:
     # UPDATE
     # =========================
 
-    def update_supplement(
+    async def update_supplement(
         self,
-        db: Session,
+        db: AsyncSession,
         supplement_id: int,
         data: SupplementUpdate,
     ) -> Supplement:
 
-        supplement = self.get_by_id(
+        supplement = await self.get_by_id(
             db,
             supplement_id,
         )
@@ -111,7 +111,7 @@ class SupplementService:
 
         if "name" in update_data:
 
-            existing = self.supplement_repo.get_by_name(
+            existing = await self.supplement_repo.get_by_name(
                 db,
                 update_data["name"],
             )
@@ -132,8 +132,8 @@ class SupplementService:
             supplement
         )
 
-        db.commit()
-        db.refresh(supplement)
+        await db.commit()
+        await db.refresh(supplement)
 
         return supplement
 
@@ -141,20 +141,20 @@ class SupplementService:
     # DELETE
     # =========================
 
-    def delete_supplement(
+    async def delete_supplement(
         self,
-        db: Session,
+        db: AsyncSession,
         supplement_id: int,
     ) -> None:
 
-        supplement = self.get_by_id(
+        supplement = await self.get_by_id(
             db,
             supplement_id,
         )
 
-        self.supplement_repo.delete(
+        await self.supplement_repo.delete(
             db,
             supplement,
         )
 
-        db.commit()
+        await db.commit()

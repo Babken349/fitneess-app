@@ -1,16 +1,13 @@
-# app/repository/exercise_log.py
-
 from sqlalchemy import select
-from sqlalchemy.orm import Session
-
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.exercise_log import ExerciseLog
 
 
 class ExerciseLogRepository:
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_log_id: int,
     ) -> ExerciseLog | None:
 
@@ -18,11 +15,12 @@ class ExerciseLogRepository:
             ExerciseLog.id == exercise_log_id
         )
 
-        return db.execute(stmt).scalar_one_or_none()
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_by_session(
+    async def get_by_session(
         self,
-        db: Session,
+        db: AsyncSession,
         workout_session_id: int,
     ) -> list[ExerciseLog]:
 
@@ -34,11 +32,12 @@ class ExerciseLogRepository:
             .order_by(ExerciseLog.exercise_order)
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def get_by_session_and_exercise(
+    async def get_by_session_and_exercise(
         self,
-        db: Session,
+        db: AsyncSession,
         workout_session_id: int,
         exercise_id: int,
     ) -> ExerciseLog | None:
@@ -48,11 +47,12 @@ class ExerciseLogRepository:
             ExerciseLog.exercise_id == exercise_id,
         )
 
-        return db.execute(stmt).scalar_one_or_none()
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_by_order_and_session(
+    async def get_by_order_and_session(
         self,
-        db: Session,
+        db: AsyncSession,
         workout_session_id: int,
         exercise_order: int,
     ) -> ExerciseLog | None:
@@ -62,11 +62,12 @@ class ExerciseLogRepository:
             ExerciseLog.exercise_order == exercise_order,
         )
 
-        return db.execute(stmt).scalar_one_or_none()
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
 
     def create(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_log: ExerciseLog,
     ) -> ExerciseLog:
 
@@ -80,10 +81,10 @@ class ExerciseLogRepository:
 
         return exercise_log
 
-    def delete(
+    async def delete(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_log: ExerciseLog,
     ) -> None:
 
-        db.delete(exercise_log)
+        await db.delete(exercise_log)

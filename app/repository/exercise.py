@@ -1,36 +1,38 @@
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.exercise import Exercise
 
 
 class ExerciseRepository:
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_id: int,
     ) -> Exercise | None:
         stmt = select(Exercise).where(
             Exercise.id == exercise_id
         )
 
-        return db.execute(stmt).scalar_one_or_none()
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_by_name(
+    async def get_by_name(
         self,
-        db: Session,
+        db: AsyncSession,
         name: str,
     ) -> Exercise | None:
         stmt = select(Exercise).where(
             Exercise.name == name
         )
 
-        return db.execute(stmt).scalar_one_or_none()
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_all(
+    async def get_all(
         self,
-        db: Session,
+        db: AsyncSession,
         skip: int = 0,
         limit: int = 20,
     ) -> list[Exercise]:
@@ -41,11 +43,12 @@ class ExerciseRepository:
             .limit(limit)
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def get_archived(
+    async def get_archived(
         self,
-        db: Session,
+        db: AsyncSession,
         skip: int = 0,
         limit: int = 20,
     ) -> list[Exercise]:
@@ -56,11 +59,12 @@ class ExerciseRepository:
             .limit(limit)
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def get_active(
+    async def get_active(
         self,
-        db: Session,
+        db: AsyncSession,
         skip: int = 0,
         limit: int = 20,
     ) -> list[Exercise]:
@@ -71,11 +75,12 @@ class ExerciseRepository:
             .limit(limit)
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def get_by_muscle_group(
+    async def get_by_muscle_group(
         self,
-        db: Session,
+        db: AsyncSession,
         muscle_group_id: int,
         skip: int = 0,
         limit: int = 20,
@@ -90,11 +95,12 @@ class ExerciseRepository:
             .limit(limit)
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def get_by_equipment(
+    async def get_by_equipment(
         self,
-        db: Session,
+        db: AsyncSession,
         equipment_id: int,
         skip: int = 0,
         limit: int = 20,
@@ -109,11 +115,12 @@ class ExerciseRepository:
             .limit(limit)
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def get_by_muscle_group_and_equipment(
+    async def get_by_muscle_group_and_equipment(
         self,
-        db: Session,
+        db: AsyncSession,
         muscle_group_id: int,
         equipment_id: int,
         skip: int = 0,
@@ -130,11 +137,12 @@ class ExerciseRepository:
             .limit(limit)
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def search_by_name(
+    async def search_by_name(
         self,
-        db: Session,
+        db: AsyncSession,
         name: str,
         skip: int = 0,
         limit: int = 20,
@@ -149,22 +157,24 @@ class ExerciseRepository:
             .limit(limit)
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def exists_by_name(
+    async def exists_by_name(
         self,
-        db: Session,
+        db: AsyncSession,
         name: str,
     ) -> bool:
         stmt = select(Exercise).where(
             Exercise.name == name
         )
 
-        return db.execute(stmt).scalar_one_or_none() is not None
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none() is not None
 
     def create(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_db: Exercise,
     ) -> Exercise:
         db.add(exercise_db)
@@ -176,12 +186,12 @@ class ExerciseRepository:
     ) -> Exercise:
         return exercise_db
 
-    def delete(
+    async def delete(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_db: Exercise,
     ) -> None:
-        db.delete(exercise_db)
+        await db.delete(exercise_db)
 
     def archive(
         self,

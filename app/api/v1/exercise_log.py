@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.auth.dependencies import get_current_user
 from app.core.dependency import get_db
 from app.models.users import User
@@ -23,13 +24,13 @@ exercise_log_service = ExerciseLogService()
     response_model=ExerciseLogResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_exercise_log(
+async def create_exercise_log(
     session_id: int,
     data: ExerciseLogCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return exercise_log_service.create_exercise_log(
+    return await exercise_log_service.create_exercise_log(
         db=db,
         workout_session_id=session_id,
         data=data,
@@ -41,12 +42,12 @@ def create_exercise_log(
     "/workout-sessions/{session_id}/exercises",
     response_model=list[ExerciseLogResponse],
 )
-def get_session_exercises(
+async def get_session_exercises(
     session_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return exercise_log_service.get_by_session(
+    return await exercise_log_service.get_by_session(
         db=db,
         workout_session_id=session_id,
         current_user=current_user,
@@ -57,12 +58,12 @@ def get_session_exercises(
     "/exercise-logs/{exercise_log_id}",
     response_model=ExerciseLogResponse,
 )
-def get_exercise_log(
+async def get_exercise_log(
     exercise_log_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return exercise_log_service.get_by_id(
+    return await exercise_log_service.get_by_id(
         db=db,
         exercise_log_id=exercise_log_id,
         current_user=current_user,
@@ -73,13 +74,13 @@ def get_exercise_log(
     "/exercise-logs/{exercise_log_id}",
     response_model=ExerciseLogResponse,
 )
-def update_exercise_log(
+async def update_exercise_log(
     exercise_log_id: int,
     data: ExerciseLogUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return exercise_log_service.update_exercise_log(
+    return await exercise_log_service.update_exercise_log(
         db=db,
         exercise_log_id=exercise_log_id,
         data=data,
@@ -91,12 +92,12 @@ def update_exercise_log(
     "/exercise-logs/{exercise_log_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_exercise_log(
+async def delete_exercise_log(
     exercise_log_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    exercise_log_service.delete_exercise_log(
+    await exercise_log_service.delete_exercise_log(
         db=db,
         exercise_log_id=exercise_log_id,
         current_user=current_user,

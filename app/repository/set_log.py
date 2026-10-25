@@ -1,14 +1,14 @@
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.set_log import SetLog
 
 
 class SetLogRepository:
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         set_log_id: int,
     ) -> SetLog | None:
 
@@ -16,11 +16,12 @@ class SetLogRepository:
             SetLog.id == set_log_id
         )
 
-        return db.execute(stmt).scalar_one_or_none()
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_by_exercise_log(
+    async def get_by_exercise_log(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_log_id: int,
     ) -> list[SetLog]:
 
@@ -32,11 +33,12 @@ class SetLogRepository:
             .order_by(SetLog.set_number)
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def get_by_number(
+    async def get_by_number(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_log_id: int,
         set_number: int,
     ) -> SetLog | None:
@@ -46,11 +48,12 @@ class SetLogRepository:
             SetLog.set_number == set_number,
         )
 
-        return db.execute(stmt).scalar_one_or_none()
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
 
     def create(
         self,
-        db: Session,
+        db: AsyncSession,
         set_log: SetLog,
     ) -> SetLog:
 
@@ -64,10 +67,10 @@ class SetLogRepository:
 
         return set_log
 
-    def delete(
+    async def delete(
         self,
-        db: Session,
+        db: AsyncSession,
         set_log: SetLog,
     ) -> None:
 
-        db.delete(set_log)
+        await db.delete(set_log)

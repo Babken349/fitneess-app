@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user
 from app.core.dependency import get_db
@@ -19,7 +19,7 @@ service = EmailVerificationService()
 )
 async def send_verification_email(
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     await service.send_verification_email(db, current_user)
 
@@ -32,11 +32,11 @@ async def send_verification_email(
     "/verify",
     response_model=EmailVerificationResponse,
 )
-def verify_email(
+async def verify_email(
     token: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    service.verify_email(db, token)
+    await service.verify_email(db, token)
 
     return EmailVerificationResponse(
         message="Email successfully verified",

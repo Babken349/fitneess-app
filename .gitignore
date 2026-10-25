@@ -181,3 +181,10 @@ cython_debug/
 .cursorindexingignore
 venv/
 .venv/
+.env.test
+
+.env.local
+all_models_output.txt
+
+__pycache__/
+*.pyc

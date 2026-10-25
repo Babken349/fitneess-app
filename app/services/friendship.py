@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.friendship import Friendship
 from app.models.users import User
@@ -27,14 +27,14 @@ class FriendshipService:
     # INTERNAL
     # =========================
 
-    def _get_user_friendship(
+    async def _get_user_friendship(
         self,
-        db: Session,
+        db: AsyncSession,
         friendship_id: int,
         current_user: User,
     ) -> Friendship:
 
-        friendship = self.friendship_repo.get_by_id(
+        friendship = await self.friendship_repo.get_by_id(
             db,
             friendship_id,
         )
@@ -57,9 +57,9 @@ class FriendshipService:
     # SEND REQUEST
     # =========================
 
-    def send_request(
+    async def send_request(
         self,
-        db: Session,
+        db: AsyncSession,
         data: FriendshipCreate,
         current_user: User,
     ) -> Friendship:
@@ -67,7 +67,7 @@ class FriendshipService:
         if data.addressee_id == current_user.id:
             raise CannotFriendYourselfError()
 
-        existing = self.friendship_repo.get_between_users(
+        existing = await self.friendship_repo.get_between_users(
             db,
             current_user.id,
             data.addressee_id,
@@ -94,8 +94,8 @@ class FriendshipService:
             friendship,
         )
 
-        db.commit()
-        db.refresh(friendship)
+        await db.commit()
+        await db.refresh(friendship)
 
         return friendship
 
@@ -103,14 +103,14 @@ class FriendshipService:
     # ACCEPT REQUEST
     # =========================
 
-    def accept_request(
+    async def accept_request(
         self,
-        db: Session,
+        db: AsyncSession,
         friendship_id: int,
         current_user: User,
     ) -> Friendship:
 
-        friendship = self._get_user_friendship(
+        friendship = await self._get_user_friendship(
             db,
             friendship_id,
             current_user,
@@ -126,8 +126,8 @@ class FriendshipService:
 
         self.friendship_repo.update(db, friendship)
 
-        db.commit()
-        db.refresh(friendship)
+        await db.commit()
+        await db.refresh(friendship)
 
         return friendship
 
@@ -135,14 +135,14 @@ class FriendshipService:
     # REJECT REQUEST
     # =========================
 
-    def reject_request(
+    async def reject_request(
         self,
-        db: Session,
+        db: AsyncSession,
         friendship_id: int,
         current_user: User,
     ) -> None:
 
-        friendship = self._get_user_friendship(
+        friendship = await self._get_user_friendship(
             db,
             friendship_id,
             current_user,
@@ -154,25 +154,25 @@ class FriendshipService:
         if friendship.status != "pending":
             raise InvalidFriendshipStatusError()
 
-        self.friendship_repo.delete(
+        await self.friendship_repo.delete(
             db,
             friendship,
         )
 
-        db.commit()
+        await db.commit()
 
     # =========================
     # DELETE FRIEND
     # =========================
 
-    def delete_friend(
+    async def delete_friend(
         self,
-        db: Session,
+        db: AsyncSession,
         friendship_id: int,
         current_user: User,
     ) -> None:
 
-        friendship = self._get_user_friendship(
+        friendship = await self._get_user_friendship(
             db,
             friendship_id,
             current_user,
@@ -181,25 +181,25 @@ class FriendshipService:
         if friendship.status != "accepted":
             raise InvalidFriendshipStatusError()
 
-        self.friendship_repo.delete(
+        await self.friendship_repo.delete(
             db,
             friendship,
         )
 
-        db.commit()
+        await db.commit()
 
     # =========================
     # GET BY ID
     # =========================
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         friendship_id: int,
         current_user: User,
     ) -> Friendship:
 
-        return self._get_user_friendship(
+        return await self._get_user_friendship(
             db,
             friendship_id,
             current_user,
@@ -209,15 +209,15 @@ class FriendshipService:
     # GET FRIENDS
     # =========================
 
-    def get_friends(
+    async def get_friends(
         self,
-        db: Session,
+        db: AsyncSession,
         current_user: User,
         skip: int = 0,
         limit: int = 20,
     ) -> list[Friendship]:
 
-        return self.friendship_repo.get_friends_by_user(
+        return await self.friendship_repo.get_friends_by_user(
             db,
             current_user.id,
             skip,
@@ -228,15 +228,15 @@ class FriendshipService:
     # INCOMING REQUESTS
     # =========================
 
-    def get_incoming_requests(
+    async def get_incoming_requests(
         self,
-        db: Session,
+        db: AsyncSession,
         current_user: User,
         skip: int = 0,
         limit: int = 20,
     ) -> list[Friendship]:
 
-        return self.friendship_repo.get_incoming_requests(
+        return await self.friendship_repo.get_incoming_requests(
             db,
             current_user.id,
             skip,
@@ -247,15 +247,15 @@ class FriendshipService:
     # OUTGOING REQUESTS
     # =========================
 
-    def get_outgoing_requests(
+    async def get_outgoing_requests(
         self,
-        db: Session,
+        db: AsyncSession,
         current_user: User,
         skip: int = 0,
         limit: int = 20,
     ) -> list[Friendship]:
 
-        return self.friendship_repo.get_outgoing_requests(
+        return await self.friendship_repo.get_outgoing_requests(
             db,
             current_user.id,
             skip,

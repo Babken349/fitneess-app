@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user
 from app.core.dependency import get_db
@@ -22,12 +21,12 @@ service = UserSupplementService()
     response_model=UserSupplementResponse,
     status_code=201,
 )
-def create_user_supplement(
+async def create_user_supplement(
     data: UserSupplementCreate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.create_user_supplement(
+    return await service.create_user_supplement(
         db,
         data,
         current_user,
@@ -38,13 +37,13 @@ def create_user_supplement(
     "/user-supplements",
     response_model=list[UserSupplementResponse],
 )
-def get_my_supplements(
+async def get_my_supplements(
     skip: int = 0,
     limit: int = 20,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.get_my_supplements(
+    return await service.get_my_supplements(
         db,
         current_user,
         skip,
@@ -56,12 +55,12 @@ def get_my_supplements(
     "/user-supplements/{user_supplement_id}",
     response_model=UserSupplementResponse,
 )
-def get_user_supplement_by_id(
+async def get_user_supplement_by_id(
     user_supplement_id: int,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.get_by_id(
+    return await service.get_by_id(
         db,
         user_supplement_id,
         current_user,
@@ -72,13 +71,13 @@ def get_user_supplement_by_id(
     "/user-supplements/{user_supplement_id}",
     response_model=UserSupplementResponse,
 )
-def update_user_supplement(
+async def update_user_supplement(
     user_supplement_id: int,
     data: UserSupplementUpdate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.update_user_supplement(
+    return await service.update_user_supplement(
         db,
         user_supplement_id,
         data,
@@ -90,12 +89,12 @@ def update_user_supplement(
     "/user-supplements/{user_supplement_id}",
     status_code=204,
 )
-def delete_user_supplement(
+async def delete_user_supplement(
     user_supplement_id: int,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    service.delete_user_supplement(
+    await service.delete_user_supplement(
         db,
         user_supplement_id,
         current_user,

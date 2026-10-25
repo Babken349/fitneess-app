@@ -1,10 +1,10 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.exercise import Exercise
 from app.repository.exercise import ExerciseRepository
 from app.schemas.exercise import ExerciseCreate, ExerciseUpdate
 from app.repository.muscle_group import MuscleGroupRepository
-from app.repository.equipment import EquipmentRepository  
+from app.repository.equipment import EquipmentRepository
 from app.exceptions import (
     ExerciseNotFoundError,
     ExerciseAlreadyExistsError,
@@ -23,16 +23,16 @@ class ExerciseService:
     # CREATE
     # =========================
 
-    def create_exercise(
+    async def create_exercise(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_data: ExerciseCreate,
     ) -> Exercise:
 
         if not exercise_data.name.strip():
             raise ValueError("Название упражнения не может быть пустым")
 
-        if self.exercise_repo.exists_by_name(
+        if await self.exercise_repo.exists_by_name(
             db,
             exercise_data.name,
         ):
@@ -40,19 +40,19 @@ class ExerciseService:
                 exercise_data.name
             )
 
-        muscle_group = self.muscle_group_repo.get_by_id(
-            db,
-            exercise_data.muscle_group_id,
-        )
         if exercise_data.muscle_group_id is not None:
+            muscle_group = await self.muscle_group_repo.get_by_id(
+                db,
+                exercise_data.muscle_group_id,
+            )
+
             if not muscle_group:
                 raise MuscleGroupNotFoundError(
                     exercise_data.muscle_group_id
                 )
 
-
         if exercise_data.equipment_id is not None:
-            equipment = self.equipment_repo.get_equipment_by_id(
+            equipment = await self.equipment_repo.get_by_id(
                 db,
                 exercise_data.equipment_id,
             )
@@ -71,8 +71,8 @@ class ExerciseService:
 
         self.exercise_repo.create(db, exercise_db)
 
-        db.commit()
-        db.refresh(exercise_db)
+        await db.commit()
+        await db.refresh(exercise_db)
 
         return exercise_db
 
@@ -80,13 +80,13 @@ class ExerciseService:
     # GET BY ID
     # =========================
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_id: int,
     ) -> Exercise:
 
-        exercise = self.exercise_repo.get_by_id(
+        exercise = await self.exercise_repo.get_by_id(
             db,
             exercise_id,
         )
@@ -100,14 +100,14 @@ class ExerciseService:
     # GET ALL
     # =========================
 
-    def get_all(
+    async def get_all(
         self,
-        db: Session,
+        db: AsyncSession,
         skip: int = 0,
         limit: int = 20,
     ) -> list[Exercise]:
 
-        return self.exercise_repo.get_all(
+        return await self.exercise_repo.get_all(
             db,
             skip,
             limit,
@@ -117,14 +117,14 @@ class ExerciseService:
     # UPDATE
     # =========================
 
-    def update_exercise(
+    async def update_exercise(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_id: int,
         exercise_data: ExerciseUpdate,
     ) -> Exercise:
 
-        exercise = self.exercise_repo.get_by_id(
+        exercise = await self.exercise_repo.get_by_id(
             db,
             exercise_id,
         )
@@ -143,7 +143,7 @@ class ExerciseService:
                     "Название упражнения не может быть пустым"
                 )
 
-            existing = self.exercise_repo.get_by_name(
+            existing = await self.exercise_repo.get_by_name(
                 db,
                 update_data["name"],
             )
@@ -155,7 +155,7 @@ class ExerciseService:
 
         if "muscle_group_id" in update_data:
 
-            muscle_group = self.muscle_group_repo.get_by_id(
+            muscle_group = await self.muscle_group_repo.get_by_id(
                 db,
                 update_data["muscle_group_id"],
             )
@@ -167,7 +167,7 @@ class ExerciseService:
 
         if "equipment_id" in update_data:
 
-            equipment = self.equipment_repo.get_equipment_by_id(
+            equipment = await self.equipment_repo.get_by_id(
                 db,
                 update_data["equipment_id"],
             )
@@ -182,8 +182,8 @@ class ExerciseService:
 
         self.exercise_repo.update(exercise)
 
-        db.commit()
-        db.refresh(exercise)
+        await db.commit()
+        await db.refresh(exercise)
 
         return exercise
 
@@ -191,13 +191,13 @@ class ExerciseService:
     # DELETE
     # =========================
 
-    def delete_exercise(
+    async def delete_exercise(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_id: int,
     ) -> None:
 
-        exercise = self.exercise_repo.get_by_id(
+        exercise = await self.exercise_repo.get_by_id(
             db,
             exercise_id,
         )
@@ -205,24 +205,24 @@ class ExerciseService:
         if not exercise:
             raise ExerciseNotFoundError(exercise_id)
 
-        self.exercise_repo.delete(
+        await self.exercise_repo.delete(
             db,
             exercise,
         )
 
-        db.commit()
+        await db.commit()
 
     # =========================
     # ARCHIVE
     # =========================
 
-    def archive_exercise(
+    async def archive_exercise(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_id: int,
     ) -> Exercise:
 
-        exercise = self.exercise_repo.get_by_id(
+        exercise = await self.exercise_repo.get_by_id(
             db,
             exercise_id,
         )
@@ -232,8 +232,8 @@ class ExerciseService:
 
         self.exercise_repo.archive(exercise)
 
-        db.commit()
-        db.refresh(exercise)
+        await db.commit()
+        await db.refresh(exercise)
 
         return exercise
 
@@ -241,13 +241,13 @@ class ExerciseService:
     # UNARCHIVE
     # =========================
 
-    def unarchive_exercise(
+    async def unarchive_exercise(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_id: int,
     ) -> Exercise:
 
-        exercise = self.exercise_repo.get_by_id(
+        exercise = await self.exercise_repo.get_by_id(
             db,
             exercise_id,
         )
@@ -257,8 +257,8 @@ class ExerciseService:
 
         self.exercise_repo.unarchive(exercise)
 
-        db.commit()
-        db.refresh(exercise)
+        await db.commit()
+        await db.refresh(exercise)
 
         return exercise
 
@@ -266,14 +266,14 @@ class ExerciseService:
     # ACTIVE
     # =========================
 
-    def get_active(
+    async def get_active(
         self,
-        db: Session,
+        db: AsyncSession,
         skip: int = 0,
         limit: int = 20,
     ) -> list[Exercise]:
 
-        return self.exercise_repo.get_active(
+        return await self.exercise_repo.get_active(
             db,
             skip,
             limit,
@@ -283,14 +283,14 @@ class ExerciseService:
     # ARCHIVED
     # =========================
 
-    def get_archived(
+    async def get_archived(
         self,
-        db: Session,
+        db: AsyncSession,
         skip: int = 0,
         limit: int = 20,
     ) -> list[Exercise]:
 
-        return self.exercise_repo.get_archived(
+        return await self.exercise_repo.get_archived(
             db,
             skip,
             limit,
@@ -300,15 +300,15 @@ class ExerciseService:
     # MUSCLE GROUP
     # =========================
 
-    def get_by_muscle_group(
+    async def get_by_muscle_group(
         self,
-        db: Session,
+        db: AsyncSession,
         muscle_group_id: int,
         skip: int = 0,
         limit: int = 20,
     ) -> list[Exercise]:
 
-        muscle_group = self.muscle_group_repo.get_by_id(
+        muscle_group = await self.muscle_group_repo.get_by_id(
             db,
             muscle_group_id,
         )
@@ -318,7 +318,7 @@ class ExerciseService:
                 muscle_group_id
             )
 
-        return self.exercise_repo.get_by_muscle_group(
+        return await self.exercise_repo.get_by_muscle_group(
             db,
             muscle_group_id,
             skip,
@@ -329,15 +329,15 @@ class ExerciseService:
     # EQUIPMENT
     # =========================
 
-    def get_by_equipment(
+    async def get_by_equipment(
         self,
-        db: Session,
+        db: AsyncSession,
         equipment_id: int,
         skip: int = 0,
         limit: int = 20,
     ) -> list[Exercise]:
 
-        equipment = self.equipment_repo.get_equipment_by_id(
+        equipment = await self.equipment_repo.get_by_id(
             db,
             equipment_id,
         )
@@ -347,7 +347,7 @@ class ExerciseService:
                 equipment_id
             )
 
-        return self.exercise_repo.get_by_equipment(
+        return await self.exercise_repo.get_by_equipment(
             db,
             equipment_id,
             skip,
@@ -358,16 +358,16 @@ class ExerciseService:
     # MUSCLE + EQUIPMENT
     # =========================
 
-    def get_by_muscle_group_and_equipment(
+    async def get_by_muscle_group_and_equipment(
         self,
-        db: Session,
+        db: AsyncSession,
         muscle_group_id: int,
         equipment_id: int,
         skip: int = 0,
         limit: int = 20,
     ) -> list[Exercise]:
 
-        muscle_group = self.muscle_group_repo.get_by_id(
+        muscle_group = await self.muscle_group_repo.get_by_id(
             db,
             muscle_group_id,
         )
@@ -377,7 +377,7 @@ class ExerciseService:
                 muscle_group_id
             )
 
-        equipment = self.equipment_repo.get_equipment_by_id(
+        equipment = await self.equipment_repo.get_by_id(
             db,
             equipment_id,
         )
@@ -387,7 +387,7 @@ class ExerciseService:
                 equipment_id
             )
 
-        return self.exercise_repo.get_by_muscle_group_and_equipment(
+        return await self.exercise_repo.get_by_muscle_group_and_equipment(
             db,
             muscle_group_id,
             equipment_id,
@@ -399,15 +399,15 @@ class ExerciseService:
     # SEARCH
     # =========================
 
-    def search_by_name(
+    async def search_by_name(
         self,
-        db: Session,
+        db: AsyncSession,
         name: str,
         skip: int = 0,
         limit: int = 20,
     ) -> list[Exercise]:
 
-        return self.exercise_repo.search_by_name(
+        return await self.exercise_repo.search_by_name(
             db,
             name,
             skip,

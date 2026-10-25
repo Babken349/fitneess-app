@@ -1,6 +1,6 @@
 class AppError(Exception):
     status_code = 400
-
+    headers: dict[str, str] | None = None
     def __init__(self, message: str):
         self.message = message
         super().__init__(message)
@@ -350,16 +350,6 @@ class ActiveWorkoutSessionAlreadyExistsError(AppError):
 
 
 
-class WorkoutSessionNotFoundError(AppError):
-    status_code = 404
-
-    def __init__(self, session_id: int):
-        self.session_id = session_id
-        super().__init__(
-            f"Тренировка с id={session_id} не найдена"
-        )
-
-
 class ExerciseLogNotFoundError(AppError):
     status_code = 404
 
@@ -585,6 +575,11 @@ class FriendshipAccessDeniedError(AppError):
             "Вы не являетесь участником этой связи"
         )
 
+class CalendarAvailabilityNotFoundError(AppError):
+    status_code = 404
+
+    def __init__(self):
+        super().__init__("Запись о доступности не найдена")
 
 class CannotFriendYourselfError(AppError):
     status_code = 400
@@ -786,3 +781,77 @@ class EmailAlreadyVerifiedError(AppError):
         super().__init__(
             "Email уже подтверждён"
         )
+
+# =========================
+# STUDY STATE
+# =========================
+
+
+class StudyStateNotFoundError(AppError):
+    status_code = 404
+
+    def __init__(self, study_state_id: int):
+        super().__init__(
+            f"Запись о состоянии с идентификатором {study_state_id} не найдена"
+        )
+
+
+# =========================
+# STUDY TEST RESULT
+# =========================
+
+
+class StudyTestResultNotFoundError(AppError):
+    status_code = 404
+
+    def __init__(self, result_id: int):
+        super().__init__(
+            f"Результат теста с идентификатором {result_id} не найден"
+        )
+
+
+class InvalidTestScoreError(AppError):
+    status_code = 400
+
+    def __init__(self, score: float, max_score: float):
+        super().__init__(
+            f"Набранный балл ({score}) не может быть больше максимального ({max_score})"
+        )
+
+
+# =========================
+# COMMON
+# =========================
+
+
+class InvalidDateRangeError(AppError):
+    status_code = 400
+
+    def __init__(self):
+        super().__init__("Начальная дата не может быть позже конечной")
+
+
+class InvalidExerciseNameError(AppError):
+    status_code = 400
+
+    def __init__(self, name: str | None = None):
+        if name is not None:
+            super().__init__(f"Недопустимое название упражнения: '{name}'")
+        else:
+            super().__init__("Название упражнения не может быть пустым")
+
+
+class TokenExpiredError(AppError):
+    status_code = 401
+    headers = {"WWW-Authenticate": "Bearer"}
+
+    def __init__(self):
+        super().__init__("Token expired")
+
+
+class InvalidTokenError(AppError):
+    status_code = 401
+    headers = {"WWW-Authenticate": "Bearer"}
+
+    def __init__(self):
+        super().__init__("Invalid token")

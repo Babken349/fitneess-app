@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependency import get_db
 from app.auth.dependencies import get_current_user
@@ -26,13 +26,13 @@ day_service = WorkoutDayService()
     response_model=WorkoutDayResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_day(
+async def create_day(
     program_id: int,
     day_data: WorkoutDayCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return day_service.create_day(
+    return await day_service.create_day(
         db=db,
         program_id=program_id,
         day_data=day_data,
@@ -48,12 +48,12 @@ def create_day(
     "/programs/{program_id}/days",
     response_model=list[WorkoutDayResponse],
 )
-def get_days_by_program(
+async def get_days_by_program(
     program_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return day_service.get_days_by_program(
+    return await day_service.get_days_by_program(
         db=db,
         program_id=program_id,
         current_user=current_user,
@@ -64,12 +64,12 @@ def get_days_by_program(
     "/programs/{program_id}/days/active",
     response_model=list[WorkoutDayResponse],
 )
-def get_active_days_by_program(
+async def get_active_days_by_program(
     program_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return day_service.get_active_by_program(
+    return await day_service.get_active_days(
         db=db,
         program_id=program_id,
         current_user=current_user,
@@ -80,14 +80,36 @@ def get_active_days_by_program(
     "/programs/{program_id}/days/archived",
     response_model=list[WorkoutDayResponse],
 )
-def get_archived_days_by_program(
+async def get_archived_days_by_program(
     program_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return day_service.get_archived_by_program(
+    return await day_service.get_archived_days(
         db=db,
         program_id=program_id,
+        current_user=current_user,
+    )
+
+
+# =========================================================
+# SEARCH
+# Должен стоять ДО "/days/{day_id}", иначе "search" попадёт в int-параметр
+# и вернётся 422
+# =========================================================
+
+@router.get(
+    "/days/search",
+    response_model=list[WorkoutDayResponse],
+)
+async def search_days(
+    name: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await day_service.search_days(
+        db=db,
+        name=name,
         current_user=current_user,
     )
 
@@ -96,34 +118,14 @@ def get_archived_days_by_program(
     "/days/{day_id}",
     response_model=WorkoutDayResponse,
 )
-def get_day_by_id(
+async def get_day_by_id(
     day_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return day_service.get_day_by_id(
+    return await day_service.get_day_by_id(
         db=db,
         day_id=day_id,
-        current_user=current_user,
-    )
-
-
-# =========================================================
-# SEARCH
-# =========================================================
-
-@router.get(
-    "/days/search",
-    response_model=list[WorkoutDayResponse],
-)
-def search_days(
-    name: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    return day_service.search_days(
-        db=db,
-        name=name,
         current_user=current_user,
     )
 
@@ -136,13 +138,13 @@ def search_days(
     "/days/{day_id}",
     response_model=WorkoutDayResponse,
 )
-def update_day(
+async def update_day(
     day_id: int,
     day_data: WorkoutDayUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return day_service.update_day(
+    return await day_service.update_day(
         db=db,
         day_id=day_id,
         day_data=day_data,
@@ -158,12 +160,12 @@ def update_day(
     "/days/{day_id}/archive",
     response_model=WorkoutDayResponse,
 )
-def archive_day(
+async def archive_day(
     day_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return day_service.archive_day(
+    return await day_service.archive_day(
         db=db,
         day_id=day_id,
         current_user=current_user,
@@ -174,12 +176,12 @@ def archive_day(
     "/days/{day_id}/unarchive",
     response_model=WorkoutDayResponse,
 )
-def unarchive_day(
+async def unarchive_day(
     day_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return day_service.unarchive_day(
+    return await day_service.unarchive_day(
         db=db,
         day_id=day_id,
         current_user=current_user,
@@ -194,12 +196,12 @@ def unarchive_day(
     "/days/{day_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_day(
+async def delete_day(
     day_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    day_service.delete_day(
+    await day_service.delete_day(
         db=db,
         day_id=day_id,
         current_user=current_user,

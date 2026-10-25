@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user
 from app.core.dependency import get_db
@@ -23,13 +23,13 @@ service = ReminderService()
     response_model=ReminderResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_reminder(
+async def create_reminder(
     user_supplement_id: int,
     data: ReminderCreate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.create_reminder(
+    return await service.create_reminder(
         db,
         user_supplement_id,
         data,
@@ -41,14 +41,14 @@ def create_reminder(
     "/user-supplements/{user_supplement_id}/reminders",
     response_model=list[ReminderResponse],
 )
-def get_reminders_by_user_supplement(
+async def get_reminders_by_user_supplement(
     user_supplement_id: int,
     skip: int = 0,
     limit: int = 20,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.get_by_user_supplement(
+    return await service.get_by_user_supplement(
         db,
         user_supplement_id,
         current_user,
@@ -61,13 +61,13 @@ def get_reminders_by_user_supplement(
     "/supplement-reminders",
     response_model=list[ReminderResponse],
 )
-def get_my_reminders(
+async def get_my_reminders(
     skip: int = 0,
     limit: int = 20,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.get_my_reminders(
+    return await service.get_my_reminders(
         db,
         current_user,
         skip,
@@ -79,11 +79,11 @@ def get_my_reminders(
     "/supplement-reminders/active",
     response_model=list[ReminderResponse],
 )
-def get_active_reminders(
+async def get_active_reminders(
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.get_active_reminders(
+    return await service.get_active_reminders(
         db,
         current_user,
     )
@@ -93,12 +93,12 @@ def get_active_reminders(
     "/supplement-reminders/{reminder_id}",
     response_model=ReminderResponse,
 )
-def get_reminder_by_id(
+async def get_reminder_by_id(
     reminder_id: int,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.get_by_id(
+    return await service.get_by_id(
         db,
         reminder_id,
         current_user,
@@ -109,13 +109,13 @@ def get_reminder_by_id(
     "/supplement-reminders/{reminder_id}",
     response_model=ReminderResponse,
 )
-def update_reminder(
+async def update_reminder(
     reminder_id: int,
     data: ReminderUpdate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.update_reminder(
+    return await service.update_reminder(
         db,
         reminder_id,
         data,
@@ -127,12 +127,12 @@ def update_reminder(
     "/supplement-reminders/{reminder_id}/activate",
     response_model=ReminderResponse,
 )
-def activate_reminder(
+async def activate_reminder(
     reminder_id: int,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.activate_reminder(
+    return await service.activate_reminder(
         db,
         reminder_id,
         current_user,
@@ -143,12 +143,12 @@ def activate_reminder(
     "/supplement-reminders/{reminder_id}/deactivate",
     response_model=ReminderResponse,
 )
-def deactivate_reminder(
+async def deactivate_reminder(
     reminder_id: int,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.deactivate_reminder(
+    return await service.deactivate_reminder(
         db,
         reminder_id,
         current_user,
@@ -159,12 +159,12 @@ def deactivate_reminder(
     "/supplement-reminders/{reminder_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_reminder(
+async def delete_reminder(
     reminder_id: int,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    service.delete_reminder(
+    await service.delete_reminder(
         db,
         reminder_id,
         current_user,

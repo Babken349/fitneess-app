@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 
@@ -20,7 +20,7 @@ from app.services.email import EmailService
 email_service = EmailService()
 
 
-def request_password_reset(db: Session, email: str) -> dict:
+async def request_password_reset(db: AsyncSession, email: str) -> dict:
     """
     Запрос на сброс пароля:
     - находит пользователя по email;
@@ -29,14 +29,14 @@ def request_password_reset(db: Session, email: str) -> dict:
     - отправляет письмо со ссылкой на фронтенд;
     - возвращает нейтральное сообщение.
     """
-    user = users_repository.get_user_by_identifier(db, email)
+    user = await users_repository.get_user_by_identifier(db, email)
 
     # Защита от перебора: всегда одно и то же сообщение
     if user is None:
         return {"message": "Если почта верна, письмо отправлено"}
 
     # 1. Удаляем старые токены
-    reset_repository.delete_user_tokens(db, user.id)
+    await reset_repository.delete_user_tokens(db, user.id)
 
     # 2. Генерируем новый токен
     token_str = uuid.uuid4().hex
@@ -58,16 +58,10 @@ def request_password_reset(db: Session, email: str) -> dict:
     )
 
     # 5. Отправляем письмо
-    import resend
-    from app.core.config import settings as app_settings
-
-    resend.api_key = app_settings.RESEND_API_KEY
-
-    resend.Emails.send({
-        "from": f"Onboarding <{app_settings.EMAIL_FROM}>",
-        "to": user.email,
-        "subject": "Сброс пароля — Fitness App",
-        "html": f"""
+    await email_service.send_email(
+        to=user.email,
+        subject="Сброс пароля — Fitness App",
+        html=f"""
         <h1>Сброс пароля</h1>
 
         <p>Привет, {user.display_name}!</p>
@@ -98,15 +92,15 @@ def request_password_reset(db: Session, email: str) -> dict:
             Если вы не запрашивали сброс, просто проигнорируйте это письмо.
         </p>
         """,
-    })
+    )
 
     # 6. Коммит
-    db.commit()
+    await db.commit()
 
     return {"message": "Если почта верна, письмо отправлено"}
 
 
-def reset_password(db: Session, token: str, new_password: str) -> dict:
+async def reset_password(db: AsyncSession, token: str, new_password: str) -> dict:
     """
     Сброс пароля по токену:
     - проверяет токен;
@@ -114,7 +108,7 @@ def reset_password(db: Session, token: str, new_password: str) -> dict:
     - помечает токен как использованный;
     - отзывает все refresh‑токены.
     """
-    token_db = reset_repository.get_by_token(db, token)
+    token_db = await reset_repository.get_by_token(db, token)
 
     if token_db is None:
         raise InvalidCredentialsError()
@@ -122,19 +116,19 @@ def reset_password(db: Session, token: str, new_password: str) -> dict:
     if token_db.used:
         raise InvalidCredentialsError()
 
-    if token_db.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+    if token_db.expires_at < datetime.now(timezone.utc):
         raise InvalidCredentialsError()
 
-    user = users_repository.get_user_by_id(db=db, user_id=token_db.user_id)
+    user = await users_repository.get_user_by_id(db=db, user_id=token_db.user_id)
     if user is None:
         raise InvalidCredentialsError()
 
-    new_hashed = password_manager.hash(new_password)
+    new_hashed = await password_manager.hash(new_password)
     users_repository.update_password(db, user, new_hashed)
 
     reset_repository.mark_used(db, token_db)
-    refresh_repository.revoke_all_for_user(db, user.id)
+    await refresh_repository.revoke_all_for_user(db, user.id)
 
-    db.commit()
+    await db.commit()
 
     return {"message": "Пароль успешно изменен"}

@@ -1,0 +1,93 @@
+# docker-compose.yml: локальная разработка (backend + PostgreSQL, фронтенд по желанию)
+# Запуск: docker compose up --watch
+name: fitness
+
+services:
+  # ---------- PostgreSQL ----------
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      # 5433 на хосте, чтобы не конфликтовать с локальным PostgreSQL на 5432
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      # данные базы переживают пересоздание контейнера
+      - pgdata:/var/lib/postgresql/data
+      # при первом создании тома скрипт создаёт тестовую базу <имя>_test
+      - ./docker/postgres/init-test-db.sh:/docker-entrypoint-initdb.d/10-init-test-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - fitness-net
+
+  # ---------- Backend (FastAPI) ----------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    # Сначала миграции, потом сервер с автоперезагрузкой
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir app"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    # Compose Watch: изменения на хосте копируются в контейнер.
+    # Так перезагрузка работает и для репозитория на /mnt/c (WSL, Windows).
+    develop:
+      watch:
+        - action: sync
+          path: ./app
+          target: /app/app
+          ignore:
+            - __pycache__/
+        - action: sync
+          path: ./alembic
+          target: /app/alembic
+        - action: sync
+          path: ./tests
+          target: /app/tests
+        # изменились зависимости: образ пересобирается
+        - action: rebuild
+          path: ./requirements.txt
+    networks:
+      - fitness-net
+
+  # ---------- Frontend (необязательно): статика через nginx ----------
+  # Запуск: docker compose --profile web up --watch
+  # Если фронтенд открывают через Live Server, этот сервис не нужен.
+  frontend:
+    profiles: ["web"]
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ${FRONTEND_DIR:-../vyra-web}:/usr/share/nginx/html:ro
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    networks:
+      - fitness-net
+
+volumes:
+  pgdata:
+
+networks:
+  fitness-net:

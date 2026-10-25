@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependency import get_db
 
@@ -20,9 +20,9 @@ router = APIRouter()
         "Всегда возвращает одно и то же сообщение, чтобы не светить наличие почты."
     ),
 )
-def forgot_password(
+async def forgot_password(
     data: ForgotPassword,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Пользователь вводит email → бэкенд:
@@ -32,7 +32,7 @@ def forgot_password(
     - отправляет письмо со ссылкой на фронтенд;
     - возвращает нейтральное сообщение.
     """
-    return password_reset_service.request_password_reset(
+    return await password_reset_service.request_password_reset(
         db,
         data.email,
     )
@@ -46,9 +46,9 @@ def forgot_password(
         "После успешного сброса все refresh‑токены пользователя отзываются."
     ),
 )
-def reset_password(
+async def reset_password(
     data: ResetPassword,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Фронтенд вызывает этот эндпоинт после того, как пользователь:
@@ -61,7 +61,8 @@ def reset_password(
         "new_password": "..."
     }
     """
-    return password_reset_service.reset_password(
+    
+    return await password_reset_service.reset_password(
         db,
         data.token,
         data.new_password,

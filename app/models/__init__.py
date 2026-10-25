@@ -1,6 +1,7 @@
 from app.models.users import User
 from app.models.supplements import Supplement
 from app.models.user_supplements import UserSupplement
+from app.models.supplement_intake import SupplementIntake          
 from app.models.workout_program import WorkoutProgram
 from app.models.workout_day import WorkoutDay
 from app.models.exercise import Exercise, MuscleGroup, Equipment
@@ -18,3 +19,18 @@ from app.models.reminder import Reminder
 from app.models.refresh_token import RefreshToken
 from app.models.email_verification_token import EmailVerificationToken
 from app.models.password_reset_token import PasswordResetToken
+from app.models.calendar_availability import CalendarAvailability  
+from app.models.payment import Payment                             
+from app.models.sleep import SleepEntry                                 
+from app.models.study_state import StudyState                      
+from app.models.study_test_result import StudyTestResult           
+
+__all__ = [
+    "User", "Supplement", "UserSupplement", "SupplementIntake",
+    "WorkoutProgram", "WorkoutDay", "Exercise", "MuscleGroup", "Equipment",
+    "WorkoutExercise", "WorkoutSession", "ExerciseLog", "SetLog",
+    "BodyWeight", "BodyMeasurement", "ProgressPhoto",
+    "Achievement", "UserAchievement", "Friendship", "Reminder",
+    "RefreshToken", "EmailVerificationToken", "PasswordResetToken",
+    "CalendarAvailability", "Payment", "SleepEntry", "StudyState", "StudyTestResult",
+]

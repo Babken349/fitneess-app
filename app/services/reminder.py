@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.reminder import Reminder
 from app.models.users import User
@@ -28,15 +28,15 @@ class ReminderService:
         self.reminder_repo = ReminderRepository()
         self.user_supplement_repo = UserSupplementRepository()
 
-    def create_reminder(
-    self,
-    db: Session,
-    user_supplement_id: int,
-    data: ReminderCreate,
-    current_user: User,
+    async def create_reminder(
+        self,
+        db: AsyncSession,
+        user_supplement_id: int,
+        data: ReminderCreate,
+        current_user: User,
     ) -> Reminder:
 
-        user_supplement = self.user_supplement_repo.get_by_id(
+        user_supplement = await self.user_supplement_repo.get_by_id(
             db,
             user_supplement_id,
         )
@@ -51,7 +51,7 @@ class ReminderService:
                 user_supplement_id
             )
 
-        existing = self.reminder_repo.get_existing(
+        duplicate = await self.reminder_repo.exists_duplicate(
             db,
             current_user.id,
             user_supplement_id,
@@ -59,7 +59,7 @@ class ReminderService:
             data.time_of_day,
         )
 
-        if existing and existing.is_active:
+        if duplicate:
             raise SupplementReminderAlreadyExistsError()
 
         reminder = Reminder(
@@ -75,19 +75,19 @@ class ReminderService:
             reminder,
         )
 
-        db.commit()
-        db.refresh(reminder)
+        await db.commit()
+        await db.refresh(reminder)
 
         return reminder
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         reminder_id: int,
         current_user: User,
     ) -> Reminder:
 
-        reminder = self.reminder_repo.get_by_id(
+        reminder = await self.reminder_repo.get_by_id(
             db,
             reminder_id,
         )
@@ -104,30 +104,32 @@ class ReminderService:
 
         return reminder
 
-    def get_my_reminders(
+    async def get_my_reminders(
         self,
-        db: Session,
+        db: AsyncSession,
         current_user: User,
         skip: int = 0,
         limit: int = 20,
     ) -> list[Reminder]:
 
-        return self.reminder_repo.get_by_user(
+        return await self.reminder_repo.get_by_user(
             db,
             current_user.id,
             skip,
             limit,
         )
 
-    def get_by_user_supplement(
+    async def get_by_user_supplement(
         self,
-        db: Session,
+        db: AsyncSession,
         user_supplement_id: int,
         current_user: User,
+        skip: int = 0,
+        limit: int = 20,
     ) -> list[Reminder]:
 
         user_supplement = (
-            self.user_supplement_repo.get_by_id(
+            await self.user_supplement_repo.get_by_id(
                 db,
                 user_supplement_id,
             )
@@ -143,20 +145,22 @@ class ReminderService:
                 user_supplement_id
             )
 
-        return self.reminder_repo.get_by_user_supplement(
+        return await self.reminder_repo.get_by_user_supplement(
             db,
             user_supplement_id,
+            skip,
+            limit,
         )
 
-    def update_reminder(
+    async def update_reminder(
         self,
-        db: Session,
+        db: AsyncSession,
         reminder_id: int,
         data: ReminderUpdate,
         current_user: User,
     ) -> Reminder:
 
-        reminder = self.get_by_id(
+        reminder = await self.get_by_id(
             db,
             reminder_id,
             current_user,
@@ -177,20 +181,19 @@ class ReminderService:
             reminder,
         )
 
-        db.commit()
-        db.refresh(reminder)
+        await db.commit()
+        await db.refresh(reminder)
 
         return reminder
 
-
-    def activate_reminder(
+    async def activate_reminder(
         self,
-        db: Session,
+        db: AsyncSession,
         reminder_id: int,
         current_user: User,
     ) -> Reminder:
 
-        return self.update_reminder(
+        return await self.update_reminder(
             db,
             reminder_id,
             ReminderUpdate(
@@ -199,15 +202,14 @@ class ReminderService:
             current_user,
         )
 
-
-    def deactivate_reminder(
+    async def deactivate_reminder(
         self,
-        db: Session,
+        db: AsyncSession,
         reminder_id: int,
         current_user: User,
     ) -> Reminder:
 
-        return self.update_reminder(
+        return await self.update_reminder(
             db,
             reminder_id,
             ReminderUpdate(
@@ -215,22 +217,34 @@ class ReminderService:
             ),
             current_user,
         )
-    def delete_reminder(
+
+    async def delete_reminder(
         self,
-        db: Session,
+        db: AsyncSession,
         reminder_id: int,
         current_user: User,
     ) -> None:
 
-        reminder = self.get_by_id(
+        reminder = await self.get_by_id(
             db,
             reminder_id,
             current_user,
         )
 
-        self.reminder_repo.delete(
+        await self.reminder_repo.delete(
             db,
             reminder,
         )
 
-        db.commit()
+        await db.commit()
+
+    async def get_active_reminders(
+        self,
+        db: AsyncSession,
+        current_user: User,
+    ) -> list[Reminder]:
+
+        return await self.reminder_repo.get_active_by_user(
+            db,
+            current_user.id,
+        )

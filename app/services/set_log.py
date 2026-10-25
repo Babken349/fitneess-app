@@ -1,6 +1,6 @@
 # app/services/set_log.py
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.set_log import SetLog
 from app.models.users import User
@@ -30,14 +30,14 @@ class SetLogService:
         self.exercise_log_repo = ExerciseLogRepository()
         self.session_repo = WorkoutSessionRepository()
 
-    def _get_owned_exercise_log(
+    async def _get_owned_exercise_log(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_log_id: int,
         current_user: User,
     ):
 
-        exercise_log = self.exercise_log_repo.get_by_id(
+        exercise_log = await self.exercise_log_repo.get_by_id(
             db,
             exercise_log_id,
         )
@@ -47,7 +47,7 @@ class SetLogService:
                 exercise_log_id
             )
 
-        session = self.session_repo.get_by_id(
+        session = await self.session_repo.get_by_id(
             db,
             exercise_log.workout_session_id,
         )
@@ -62,21 +62,21 @@ class SetLogService:
 
         return exercise_log
 
-    def create_set(
+    async def create_set(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_log_id: int,
         data: SetLogCreate,
         current_user: User,
     ) -> SetLog:
 
-        self._get_owned_exercise_log(
+        await self._get_owned_exercise_log(
             db,
             exercise_log_id,
             current_user,
         )
 
-        existing = self.set_repo.get_by_number(
+        existing = await self.set_repo.get_by_number(
             db,
             exercise_log_id,
             data.set_number,
@@ -101,19 +101,19 @@ class SetLogService:
             set_log,
         )
 
-        db.commit()
-        db.refresh(set_log)
+        await db.commit()
+        await db.refresh(set_log)
 
         return set_log
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         set_log_id: int,
         current_user: User,
     ) -> SetLog:
 
-        set_log = self.set_repo.get_by_id(
+        set_log = await self.set_repo.get_by_id(
             db,
             set_log_id,
         )
@@ -123,7 +123,7 @@ class SetLogService:
                 set_log_id
             )
 
-        self._get_owned_exercise_log(
+        await self._get_owned_exercise_log(
             db,
             set_log.exercise_log_id,
             current_user,
@@ -131,33 +131,33 @@ class SetLogService:
 
         return set_log
 
-    def get_by_exercise_log(
+    async def get_by_exercise_log(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_log_id: int,
         current_user: User,
     ) -> list[SetLog]:
 
-        self._get_owned_exercise_log(
+        await self._get_owned_exercise_log(
             db,
             exercise_log_id,
             current_user,
         )
 
-        return self.set_repo.get_by_exercise_log(
+        return await self.set_repo.get_by_exercise_log(
             db,
             exercise_log_id,
         )
 
-    def update_set(
+    async def update_set(
         self,
-        db: Session,
+        db: AsyncSession,
         set_log_id: int,
         data: SetLogUpdate,
         current_user: User,
     ) -> SetLog:
 
-        set_log = self.set_repo.get_by_id(
+        set_log = await self.set_repo.get_by_id(
             db,
             set_log_id,
         )
@@ -167,7 +167,7 @@ class SetLogService:
                 set_log_id
             )
 
-        self._get_owned_exercise_log(
+        await self._get_owned_exercise_log(
             db,
             set_log.exercise_log_id,
             current_user,
@@ -179,7 +179,7 @@ class SetLogService:
 
         if "set_number" in update_data:
 
-            existing = self.set_repo.get_by_number(
+            existing = await self.set_repo.get_by_number(
                 db,
                 set_log.exercise_log_id,
                 update_data["set_number"],
@@ -201,19 +201,19 @@ class SetLogService:
             set_log
         )
 
-        db.commit()
-        db.refresh(set_log)
+        await db.commit()
+        await db.refresh(set_log)
 
         return set_log
 
-    def delete_set(
+    async def delete_set(
         self,
-        db: Session,
+        db: AsyncSession,
         set_log_id: int,
         current_user: User,
     ) -> None:
 
-        set_log = self.set_repo.get_by_id(
+        set_log = await self.set_repo.get_by_id(
             db,
             set_log_id,
         )
@@ -223,15 +223,15 @@ class SetLogService:
                 set_log_id
             )
 
-        self._get_owned_exercise_log(
+        await self._get_owned_exercise_log(
             db,
             set_log.exercise_log_id,
             current_user,
         )
 
-        self.set_repo.delete(
+        await self.set_repo.delete(
             db,
             set_log,
         )
 
-        db.commit()
+        await db.commit()

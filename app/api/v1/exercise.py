@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
-
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.auth.dependencies import require_admin
 from app.core.dependency import get_db
-
+from app.models.users import User
 from app.schemas.exercise import (
     ExerciseCreate,
     ExerciseUpdate,
@@ -26,11 +26,12 @@ exercise_service = ExerciseService()
     response_model=ExerciseResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_exercise(
+async def create_exercise(
     exercise_data: ExerciseCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin),
 ):
-    return exercise_service.create_exercise(
+    return await exercise_service.create_exercise(
         db=db,
         exercise_data=exercise_data,
     )
@@ -44,13 +45,38 @@ def create_exercise(
     "",
     response_model=list[ExerciseResponse],
 )
-def get_exercises(
+async def get_exercises(
     skip: int = 0,
     limit: int = 20,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return exercise_service.get_all(
+    return await exercise_service.get_all(
         db=db,
+        skip=skip,
+        limit=limit,
+    )
+
+
+# =========================
+# BY MUSCLE + EQUIPMENT
+# Должен стоять ДО "/{exercise_id}", иначе "filter" попадёт в int-параметр
+# =========================
+
+@router.get(
+    "/filter",
+    response_model=list[ExerciseResponse],
+)
+async def get_exercises_by_filter(
+    muscle_group_id: int,
+    equipment_id: int,
+    skip: int = 0,
+    limit: int = 20,
+    db: AsyncSession = Depends(get_db),
+):
+    return await exercise_service.get_by_muscle_group_and_equipment(
+        db=db,
+        muscle_group_id=muscle_group_id,
+        equipment_id=equipment_id,
         skip=skip,
         limit=limit,
     )
@@ -64,11 +90,11 @@ def get_exercises(
     "/{exercise_id}",
     response_model=ExerciseResponse,
 )
-def get_exercise(
+async def get_exercise(
     exercise_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return exercise_service.get_by_id(
+    return await exercise_service.get_by_id(
         db=db,
         exercise_id=exercise_id,
     )
@@ -82,12 +108,13 @@ def get_exercise(
     "/{exercise_id}",
     response_model=ExerciseResponse,
 )
-def update_exercise(
+async def update_exercise(
     exercise_id: int,
     exercise_data: ExerciseUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin),
 ):
-    return exercise_service.update_exercise(
+    return await exercise_service.update_exercise(
         db=db,
         exercise_id=exercise_id,
         exercise_data=exercise_data,
@@ -102,11 +129,12 @@ def update_exercise(
     "/{exercise_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_exercise(
+async def delete_exercise(
     exercise_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin),
 ):
-    exercise_service.delete_exercise(
+    await exercise_service.delete_exercise(
         db=db,
         exercise_id=exercise_id,
     )
@@ -122,11 +150,12 @@ def delete_exercise(
     "/{exercise_id}/archive",
     response_model=ExerciseResponse,
 )
-def archive_exercise(
+async def archive_exercise(
     exercise_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin),
 ):
-    return exercise_service.archive_exercise(
+    return await exercise_service.archive_exercise(
         db=db,
         exercise_id=exercise_id,
     )
@@ -140,11 +169,12 @@ def archive_exercise(
     "/{exercise_id}/unarchive",
     response_model=ExerciseResponse,
 )
-def unarchive_exercise(
+async def unarchive_exercise(
     exercise_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin),
 ):
-    return exercise_service.unarchive_exercise(
+    return await exercise_service.unarchive_exercise(
         db=db,
         exercise_id=exercise_id,
     )
@@ -158,12 +188,12 @@ def unarchive_exercise(
     "/status/active",
     response_model=list[ExerciseResponse],
 )
-def get_active_exercises(
+async def get_active_exercises(
     skip: int = 0,
     limit: int = 20,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return exercise_service.get_active(
+    return await exercise_service.get_active(
         db=db,
         skip=skip,
         limit=limit,
@@ -178,12 +208,12 @@ def get_active_exercises(
     "/status/archived",
     response_model=list[ExerciseResponse],
 )
-def get_archived_exercises(
+async def get_archived_exercises(
     skip: int = 0,
     limit: int = 20,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return exercise_service.get_archived(
+    return await exercise_service.get_archived(
         db=db,
         skip=skip,
         limit=limit,
@@ -198,13 +228,13 @@ def get_archived_exercises(
     "/muscle-group/{muscle_group_id}",
     response_model=list[ExerciseResponse],
 )
-def get_exercises_by_muscle_group(
+async def get_exercises_by_muscle_group(
     muscle_group_id: int,
     skip: int = 0,
     limit: int = 20,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return exercise_service.get_by_muscle_group(
+    return await exercise_service.get_by_muscle_group(
         db=db,
         muscle_group_id=muscle_group_id,
         skip=skip,
@@ -220,38 +250,14 @@ def get_exercises_by_muscle_group(
     "/equipment/{equipment_id}",
     response_model=list[ExerciseResponse],
 )
-def get_exercises_by_equipment(
+async def get_exercises_by_equipment(
     equipment_id: int,
     skip: int = 0,
     limit: int = 20,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return exercise_service.get_by_equipment(
+    return await exercise_service.get_by_equipment(
         db=db,
-        equipment_id=equipment_id,
-        skip=skip,
-        limit=limit,
-    )
-
-
-# =========================
-# BY MUSCLE + EQUIPMENT
-# =========================
-
-@router.get(
-    "/filter",
-    response_model=list[ExerciseResponse],
-)
-def get_exercises_by_filter(
-    muscle_group_id: int,
-    equipment_id: int,
-    skip: int = 0,
-    limit: int = 20,
-    db: Session = Depends(get_db),
-):
-    return exercise_service.get_by_muscle_group_and_equipment(
-        db=db,
-        muscle_group_id=muscle_group_id,
         equipment_id=equipment_id,
         skip=skip,
         limit=limit,
@@ -266,13 +272,13 @@ def get_exercises_by_filter(
     "/search/name",
     response_model=list[ExerciseResponse],
 )
-def search_exercises(
+async def search_exercises(
     name: str,
     skip: int = 0,
     limit: int = 20,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return exercise_service.search_by_name(
+    return await exercise_service.search_by_name(
         db=db,
         name=name,
         skip=skip,

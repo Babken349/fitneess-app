@@ -1,0 +1,18 @@
+# Всё, что не должно попасть в образ
+.git
+.gitignore
+.gitattributes
+.env
+.env.*
+!.env.example
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+all_models_output.txt
+openapi.json
+docker-compose*.yml
+README*.md

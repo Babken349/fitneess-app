@@ -1,6 +1,6 @@
 # app/services/exercise_log.py
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.exercise_log import ExerciseLog
 from app.models.users import User
@@ -31,15 +31,15 @@ class ExerciseLogService:
         self.session_repo = WorkoutSessionRepository()
         self.exercise_repo = ExerciseRepository()
 
-    def create_exercise_log(
+    async def create_exercise_log(
         self,
-        db: Session,
+        db: AsyncSession,
         workout_session_id: int,
         data: ExerciseLogCreate,
         current_user: User,
     ) -> ExerciseLog:
 
-        session = self.session_repo.get_by_id(
+        session = await self.session_repo.get_by_id(
             db,
             workout_session_id,
         )
@@ -52,7 +52,7 @@ class ExerciseLogService:
         if session.user_id != current_user.id:
             raise ForbiddenError()
 
-        exercise = self.exercise_repo.get_by_id(
+        exercise = await self.exercise_repo.get_by_id(
             db,
             data.exercise_id,
         )
@@ -63,7 +63,7 @@ class ExerciseLogService:
             )
 
         existing_exercise = (
-            self.exercise_log_repo.get_by_session_and_exercise(
+            await self.exercise_log_repo.get_by_session_and_exercise(
                 db,
                 workout_session_id,
                 data.exercise_id,
@@ -76,7 +76,7 @@ class ExerciseLogService:
             )
 
         existing_order = (
-            self.exercise_log_repo.get_by_order_and_session(
+            await self.exercise_log_repo.get_by_order_and_session(
                 db,
                 workout_session_id,
                 data.exercise_order,
@@ -100,19 +100,19 @@ class ExerciseLogService:
             exercise_log,
         )
 
-        db.commit()
-        db.refresh(exercise_log)
+        await db.commit()
+        await db.refresh(exercise_log)
 
         return exercise_log
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_log_id: int,
         current_user: User,
     ) -> ExerciseLog:
 
-        exercise_log = self.exercise_log_repo.get_by_id(
+        exercise_log = await self.exercise_log_repo.get_by_id(
             db,
             exercise_log_id,
         )
@@ -122,7 +122,7 @@ class ExerciseLogService:
                 exercise_log_id
             )
 
-        session = self.session_repo.get_by_id(
+        session = await self.session_repo.get_by_id(
             db,
             exercise_log.workout_session_id,
         )
@@ -132,14 +132,14 @@ class ExerciseLogService:
 
         return exercise_log
 
-    def get_by_session(
+    async def get_by_session(
         self,
-        db: Session,
+        db: AsyncSession,
         workout_session_id: int,
         current_user: User,
     ) -> list[ExerciseLog]:
 
-        session = self.session_repo.get_by_id(
+        session = await self.session_repo.get_by_id(
             db,
             workout_session_id,
         )
@@ -152,20 +152,20 @@ class ExerciseLogService:
         if session.user_id != current_user.id:
             raise ForbiddenError()
 
-        return self.exercise_log_repo.get_by_session(
+        return await self.exercise_log_repo.get_by_session(
             db,
             workout_session_id,
         )
 
-    def update_exercise_log(
+    async def update_exercise_log(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_log_id: int,
         data: ExerciseLogUpdate,
         current_user: User,
     ) -> ExerciseLog:
 
-        exercise_log = self.exercise_log_repo.get_by_id(
+        exercise_log = await self.exercise_log_repo.get_by_id(
             db,
             exercise_log_id,
         )
@@ -175,7 +175,7 @@ class ExerciseLogService:
                 exercise_log_id
             )
 
-        session = self.session_repo.get_by_id(
+        session = await self.session_repo.get_by_id(
             db,
             exercise_log.workout_session_id,
         )
@@ -189,7 +189,7 @@ class ExerciseLogService:
 
         if "exercise_order" in update_data:
             existing = (
-                self.exercise_log_repo.get_by_order_and_session(
+                await self.exercise_log_repo.get_by_order_and_session(
                     db,
                     exercise_log.workout_session_id,
                     update_data["exercise_order"],
@@ -212,19 +212,19 @@ class ExerciseLogService:
             exercise_log
         )
 
-        db.commit()
-        db.refresh(exercise_log)
+        await db.commit()
+        await db.refresh(exercise_log)
 
         return exercise_log
 
-    def delete_exercise_log(
+    async def delete_exercise_log(
         self,
-        db: Session,
+        db: AsyncSession,
         exercise_log_id: int,
         current_user: User,
     ) -> None:
 
-        exercise_log = self.exercise_log_repo.get_by_id(
+        exercise_log = await self.exercise_log_repo.get_by_id(
             db,
             exercise_log_id,
         )
@@ -234,7 +234,7 @@ class ExerciseLogService:
                 exercise_log_id
             )
 
-        session = self.session_repo.get_by_id(
+        session = await self.session_repo.get_by_id(
             db,
             exercise_log.workout_session_id,
         )
@@ -242,9 +242,9 @@ class ExerciseLogService:
         if not session or session.user_id != current_user.id:
             raise ForbiddenError()
 
-        self.exercise_log_repo.delete(
+        await self.exercise_log_repo.delete(
             db,
             exercise_log,
         )
 
-        db.commit()
+        await db.commit()

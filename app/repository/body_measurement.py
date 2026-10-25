@@ -1,5 +1,5 @@
-from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.body_measurement import BodyMeasurement
 
@@ -8,14 +8,14 @@ class BodyMeasurementRepository:
     def __init__(self):
         pass
 
-    def get_by_id(self, db: Session, measurement_id: int) -> BodyMeasurement | None:
+    async def get_by_id(self, db: AsyncSession, measurement_id: int) -> BodyMeasurement | None:
         stmt = select(BodyMeasurement).where(BodyMeasurement.id == measurement_id)
-        result = db.execute(stmt)
+        result = await db.execute(stmt)
         return result.scalar_one_or_none()
 
-    def get_by_user(
+    async def get_by_user(
         self,
-        db: Session,
+        db: AsyncSession,
         user_id: int,
         skip: int = 0,
         limit: int = 20,
@@ -27,15 +27,15 @@ class BodyMeasurementRepository:
             .offset(skip)
             .limit(limit)
         )
-        result = db.execute(stmt)
+        result = await db.execute(stmt)
         return result.scalars().all()
 
-    def create(self, db: Session, measurement_db: BodyMeasurement) -> BodyMeasurement:
+    def create(self, db: AsyncSession, measurement_db: BodyMeasurement) -> BodyMeasurement:
         db.add(measurement_db)
         return measurement_db
 
-    def update(self, db: Session, measurement_db: BodyMeasurement) -> BodyMeasurement:
+    def update(self, db: AsyncSession, measurement_db: BodyMeasurement) -> BodyMeasurement:
         return measurement_db
 
-    def delete(self, db: Session, measurement_db: BodyMeasurement) -> None:
-        db.delete(measurement_db)
+    async def delete(self, db: AsyncSession, measurement_db: BodyMeasurement) -> None:
+        await db.delete(measurement_db)

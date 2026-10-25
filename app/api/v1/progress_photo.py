@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user
 from app.core.dependency import get_db
@@ -16,47 +16,47 @@ service = ProgressPhotoService()
 
 
 @router.post("/photos", response_model=ProgressPhotoResponse, status_code=201)
-def create_photo(
+async def create_photo(
     data: ProgressPhotoCreate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.create_photo(db, data, current_user)
+    return await service.create_photo(db, data, current_user)
 
 
 @router.get("/photos", response_model=list[ProgressPhotoResponse])
-def get_my_photos(
+async def get_my_photos(
     skip: int = 0,
     limit: int = 20,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.get_my_photos(db, current_user, skip, limit)
+    return await service.get_my_photos(db, current_user, skip, limit)
 
 
 @router.get("/photos/{photo_id}", response_model=ProgressPhotoResponse)
-def get_photo_by_id(
+async def get_photo_by_id(
     photo_id: int,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.get_by_id(db, photo_id, current_user)
+    return await service.get_by_id(db, photo_id, current_user)
 
 
 @router.patch("/photos/{photo_id}", response_model=ProgressPhotoResponse)
-def update_photo(
+async def update_photo(
     photo_id: int,
     data: ProgressPhotoUpdate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.update_photo(db, photo_id, data, current_user)
+    return await service.update_photo(db, photo_id, data, current_user)
 
 
 @router.delete("/photos/{photo_id}", status_code=204)
-def delete_photo(
+async def delete_photo(
     photo_id: int,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    service.delete_photo(db, photo_id, current_user)
+    await service.delete_photo(db, photo_id, current_user)

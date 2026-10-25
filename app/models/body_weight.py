@@ -13,7 +13,11 @@ class BodyWeight(Base):
     __tablename__ = "body_weights"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(
+    ForeignKey("users.id", ondelete="CASCADE"),
+    nullable=False,
+    index=True,
+)
 
     weight: Mapped[float] = mapped_column(Float, nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

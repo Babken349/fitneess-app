@@ -14,7 +14,11 @@ class Reminder(Base):
     __tablename__ = "reminders"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(
+    ForeignKey("users.id", ondelete="CASCADE"),
+    nullable=False,
+    index=True,
+)
     user_supplement_id: Mapped[int] = mapped_column(ForeignKey("user_supplements.id"), nullable=False)
 
     day_of_week: Mapped[int] = mapped_column(Integer, nullable=False)  # 0=понедельник, 6=воскресенье
@@ -23,5 +27,11 @@ class Reminder(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
-    user: Mapped["User"] = relationship()
+    
     user_supplement: Mapped["UserSupplement | None"] = relationship()
+
+
+    user: Mapped["User"] = relationship(
+    "User",
+    back_populates="reminders",
+    )

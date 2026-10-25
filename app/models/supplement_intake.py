@@ -21,10 +21,10 @@ class SupplementIntake(Base):
     )
 
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
-        nullable=False,
-        index=True,
-    )
+    ForeignKey("users.id", ondelete="CASCADE"),
+    nullable=False,
+    index=True,
+)
 
     user_supplement_id: Mapped[int] = mapped_column(
         ForeignKey("user_supplements.id"),
@@ -58,8 +58,12 @@ class SupplementIntake(Base):
         server_default=func.now(),
     )
 
-    user: Mapped["User"] = relationship()
 
     user_supplement: Mapped["UserSupplement"] = relationship(
         back_populates="intakes",
+    )
+
+    user: Mapped["User"] = relationship(
+    "User",
+    back_populates="supplement_intakes",
     )

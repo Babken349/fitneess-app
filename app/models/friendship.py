@@ -13,8 +13,16 @@ class Friendship(Base):
     __tablename__ = "friendships"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    requester_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    addressee_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    requester_id: Mapped[int] = mapped_column(
+    ForeignKey("users.id", ondelete="CASCADE"),
+    nullable=False,
+    index=True,
+)
+    addressee_id: Mapped[int] = mapped_column(
+    ForeignKey("users.id", ondelete="CASCADE"),
+    nullable=False,
+    index=True,
+)
 
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
 

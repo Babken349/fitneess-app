@@ -13,7 +13,11 @@ class BodyMeasurement(Base):
     __tablename__ = "body_measurements"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(
+    ForeignKey("users.id", ondelete="CASCADE"),
+    nullable=False,
+    index=True,
+    )
 
     chest: Mapped[float | None] = mapped_column(Float, nullable=True)
     waist: Mapped[float | None] = mapped_column(Float, nullable=True)

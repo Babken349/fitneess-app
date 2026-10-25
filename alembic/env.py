@@ -1,25 +1,27 @@
-from logging.config import fileConfig
+
+import asyncio
 import os
 import sys
-
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from logging.config import fileConfig
 
 from alembic import context
-
-# 1. Добавляем корневую папку проекта в sys.path, чтобы Alembic видел папку 'app'
-# (Без этого он выдаст ModuleNotFoundError, когда попытается импортировать твои модели)
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# 2. Загружаем переменные окружения из .env
 from dotenv import load_dotenv
+from sqlalchemy import pool
+from sqlalchemy.ext.asyncio import async_engine_from_config
+
+
+# Добавляем корень проекта в sys.path
+sys.path.insert(
+    0,
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+)
+
+# Загружаем переменные окружения
 load_dotenv()
 
-# 3. Импортируем Base из твоего database.py
+# Импортируем Base и модели
 from app.core.database import Base
 
-# 4. ИМПОРТИРУЕМ ВСЕ МОДЕЛИ, чтобы Alembic их увидел и создал таблицы!
-# ВАЖНО: Если ты создал новые модели, не забудь добавить их сюда!
 from app.models.users import User
 from app.models.exercise import Exercise
 from app.models.workout_program import WorkoutProgram
@@ -33,53 +35,78 @@ from app.models.reminder import Reminder
 from app.models.achievement import Achievement
 
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+# Конфигурация Alembic
 config = context.config
 
-# 5. Берем DATABASE_URL из .env и подсовываем его Alembic
+# Получаем URL подключения из .env
 database_url = os.getenv("DATABASE_URL")
-if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
+if not database_url:
+    raise RuntimeError("DATABASE_URL не найден в .env")
+
+config.set_main_option(
+    "sqlalchemy.url",
+    database_url.replace("%", "%%"),
+)
+
+# Настройка логирования
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# 6. Указываем метаданные твоих моделей (раньше тут было None)
+# Метаданные моделей для autogenerate
 target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode."""
+    """Запуск миграций без подключения к БД."""
+
     url = config.get_main_option("sqlalchemy.url")
+
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        compare_type=True,
     )
 
     with context.begin_transaction():
         context.run_migrations()
 
 
-def run_migrations_online() -> None:
-    """Run migrations in 'online' mode."""
-    connectable = engine_from_config(
+def do_run_migrations(connection) -> None:
+    """Выполнение миграций через синхронный интерфейс Alembic."""
+
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        compare_type=True,
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+async def run_async_migrations() -> None:
+    """Создание асинхронного подключения к БД."""
+
+    connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+    try:
+        async with connectable.connect() as connection:
+            await connection.run_sync(do_run_migrations)
+    finally:
+        await connectable.dispose()
 
-        with context.begin_transaction():
-            context.run_migrations()
+
+def run_migrations_online() -> None:
+    """Запуск миграций с асинхронным подключением."""
+
+    asyncio.run(run_async_migrations())
 
 
 if context.is_offline_mode():

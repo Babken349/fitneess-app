@@ -1,4 +1,6 @@
 import resend
+from starlette.concurrency import run_in_threadpool
+
 from app.core.config import settings
 
 resend.api_key = settings.RESEND_API_KEY
@@ -26,5 +28,6 @@ class EmailService:
         if text:
             payload["text"] = text
 
-        response = resend.Emails.send(payload)
+        # resend SDK блокирующий, выносим в поток, чтобы не вешать event loop
+        response = await run_in_threadpool(resend.Emails.send, payload)
         return response

@@ -1,12 +1,17 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
-from app.core.config import settings  # Берем настройки из нашего конфига!
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
 
-# Создаем движок, используя URL из настроек
-engine = create_engine(settings.DATABASE_URL) # ВАЖНО: добавь DATABASE_URL в класс Settings и в .env файл!
+from app.core.config import settings
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Новый стиль SQLAlchemy 2.0
+engine = create_async_engine(settings.DATABASE_URL)
+
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+)
+
+
 class Base(DeclarativeBase):
     pass

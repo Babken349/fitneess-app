@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.progress_photo import ProgressPhoto
 from app.models.users import User
@@ -12,9 +12,9 @@ class ProgressPhotoService:
     def __init__(self):
         self.photo_repo = ProgressPhotoRepository()
 
-    def create_photo(
+    async def create_photo(
         self,
-        db: Session,
+        db: AsyncSession,
         data: ProgressPhotoCreate,
         current_user: User,
     ) -> ProgressPhoto:
@@ -25,17 +25,17 @@ class ProgressPhotoService:
         )
 
         new_photo = self.photo_repo.create(db, photo_db)
-        db.commit()
-        db.refresh(new_photo)
+        await db.commit()
+        await db.refresh(new_photo)
         return new_photo
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         photo_id: int,
         current_user: User,
     ) -> ProgressPhoto:
-        photo = self.photo_repo.get_by_id(db, photo_id)
+        photo = await self.photo_repo.get_by_id(db, photo_id)
         if not photo:
             raise ProgressPhotoNotFoundError(photo_id)
 
@@ -44,39 +44,39 @@ class ProgressPhotoService:
 
         return photo
 
-    def get_my_photos(
+    async def get_my_photos(
         self,
-        db: Session,
+        db: AsyncSession,
         current_user: User,
         skip: int = 0,
         limit: int = 20,
     ) -> list[ProgressPhoto]:
-        return self.photo_repo.get_by_user(db, current_user.id, skip, limit)
+        return await self.photo_repo.get_by_user(db, current_user.id, skip, limit)
 
-    def update_photo(
+    async def update_photo(
         self,
-        db: Session,
+        db: AsyncSession,
         photo_id: int,
         data: ProgressPhotoUpdate,
         current_user: User,
     ) -> ProgressPhoto:
-        photo_db = self.get_by_id(db, photo_id, current_user)
+        photo_db = await self.get_by_id(db, photo_id, current_user)
 
         update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(photo_db, key, value)
 
         self.photo_repo.update(db, photo_db)
-        db.commit()
-        db.refresh(photo_db)
+        await db.commit()
+        await db.refresh(photo_db)
         return photo_db
 
-    def delete_photo(
+    async def delete_photo(
         self,
-        db: Session,
+        db: AsyncSession,
         photo_id: int,
         current_user: User,
     ) -> None:
-        photo_db = self.get_by_id(db, photo_id, current_user)
-        self.photo_repo.delete(db, photo_db)
-        db.commit()
+        photo_db = await self.get_by_id(db, photo_id, current_user)
+        await self.photo_repo.delete(db, photo_db)
+        await db.commit()

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user
 from app.core.dependency import get_db
@@ -25,12 +25,12 @@ session_service = WorkoutSessionService()
     response_model=WorkoutSessionResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_session(
+async def create_session(
     session_data: WorkoutSessionCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return session_service.create_session(
+    return await session_service.create_session(
         db=db,
         session_data=session_data,
         current_user=current_user,
@@ -41,13 +41,13 @@ def create_session(
     "/me",
     response_model=list[WorkoutSessionResponse],
 )
-def get_my_sessions(
+async def get_my_sessions(
     skip: int = 0,
     limit: int = 20,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return session_service.get_my_sessions(
+    return await session_service.get_my_sessions(
         db=db,
         current_user=current_user,
         skip=skip,
@@ -59,11 +59,11 @@ def get_my_sessions(
     "/active",
     response_model=WorkoutSessionResponse | None,
 )
-def get_active_session(
-    db: Session = Depends(get_db),
+async def get_active_session(
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return session_service.get_active_session(
+    return await session_service.get_active_session(
         db=db,
         current_user=current_user,
     )
@@ -73,12 +73,12 @@ def get_active_session(
     "/{session_id}",
     response_model=WorkoutSessionResponse,
 )
-def get_session(
+async def get_session(
     session_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return session_service.get_by_id(
+    return await session_service.get_by_id(
         db=db,
         session_id=session_id,
         current_user=current_user,
@@ -89,12 +89,12 @@ def get_session(
     "/day/{workout_day_id}",
     response_model=list[WorkoutSessionResponse],
 )
-def get_sessions_by_day(
+async def get_sessions_by_day(
     workout_day_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return session_service.get_by_day(
+    return await session_service.get_by_day(
         db=db,
         workout_day_id=workout_day_id,
         current_user=current_user,
@@ -105,13 +105,13 @@ def get_sessions_by_day(
     "/{session_id}",
     response_model=WorkoutSessionResponse,
 )
-def update_session(
+async def update_session(
     session_id: int,
     session_data: WorkoutSessionUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return session_service.update_session(
+    return await session_service.update_session(
         db=db,
         session_id=session_id,
         session_data=session_data,
@@ -123,12 +123,12 @@ def update_session(
     "/{session_id}/finish",
     response_model=WorkoutSessionResponse,
 )
-def finish_session(
+async def finish_session(
     session_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return session_service.finish_session(
+    return await session_service.finish_session(
         db=db,
         session_id=session_id,
         current_user=current_user,
@@ -139,12 +139,12 @@ def finish_session(
     "/{session_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_session(
+async def delete_session(
     session_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    session_service.delete_session(
+    await session_service.delete_session(
         db=db,
         session_id=session_id,
         current_user=current_user,

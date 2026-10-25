@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timedelta, timezone
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.users import User
 from app.models.email_verification_token import EmailVerificationToken
@@ -9,9 +9,9 @@ from app.repository import users as users_repository
 from app.exceptions import InvalidCredentialsError
 
 
-def request_verification_token(db: Session, user: User) -> EmailVerificationToken:
+async def request_verification_token(db: AsyncSession, user: User) -> EmailVerificationToken:
     # 1. Репозиторий удаляет старые токены (без коммита)
-    email_repository.delete_user_tokens(db=db, user_id=user.id)
+    await email_repository.delete_user_tokens(db=db, user_id=user.id)
 
     token_str = uuid.uuid4().hex
 
@@ -26,42 +26,40 @@ def request_verification_token(db: Session, user: User) -> EmailVerificationToke
     saved_token = email_repository.create_verification_token(db=db, token_model=token_model)
 
     # 3. СЕРВИС ДЕЛАЕТ COMMIT! (Unit of Work)
-    db.commit()
-    db.refresh(saved_token)
+    await db.commit()
+    await db.refresh(saved_token)
 
     print(f"Отправлено письмо! Ссылка: http://localhost:8000/api/v1/auth/verify-email?token={saved_token.verification_token}")
 
     return saved_token
 
 
-def verify_email(db: Session, token_string: str) -> dict:
-    
+async def verify_email(db: AsyncSession, token_string: str) -> dict:
+
     # 1. Ищем токен
-    token_db = email_repository.get_by_token(db=db, token_string=token_string)
+    token_db = await email_repository.get_by_token(db=db, token_string=token_string)
     if token_db is None:
         raise InvalidCredentialsError()
 
     # 2. Pythonic style: пишем просто if token_db.used, без == True
     if token_db.used:
         raise InvalidCredentialsError()
-    
+
     if token_db.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
         raise InvalidCredentialsError()
 
     # 3. Находим юзера и меняем его
-    user = users_repository.get_user_by_id(db=db, user_id=token_db.user_id)
+    user = await users_repository.get_user_by_id(db=db, user_id=token_db.user_id)
     if user is None:
         raise InvalidCredentialsError()
-        
+
     user.is_verified = True
 
     # 4. Помечаем токен как использованный
     email_repository.mark_used(db=db, token_db=token_db)
 
     # 5. СЕРВИС ДЕЛАЕТ COMMIT! Все изменения сохраняются разом.
-    db.commit()
-    db.refresh(user)
-    
+    await db.commit()
+    await db.refresh(user)
+
     return {"message": "Email успешно подтвержден"}
-
-

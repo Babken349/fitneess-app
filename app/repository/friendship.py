@@ -1,30 +1,31 @@
-from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.friendship import Friendship
 
 
 class FriendshipRepository:
 
-    def create(self, db: Session, friendship: Friendship) -> Friendship:
+    def create(self, db: AsyncSession, friendship: Friendship) -> Friendship:
         db.add(friendship)
         return friendship
 
-    def delete(self, db: Session, friendship: Friendship) -> None:
-        db.delete(friendship)
+    async def delete(self, db: AsyncSession, friendship: Friendship) -> None:
+        await db.delete(friendship)
 
-    def update(self, db: Session, friendship: Friendship) -> Friendship:
+    def update(self, db: AsyncSession, friendship: Friendship) -> Friendship:
         return friendship
 
-    def get_by_id(self, db: Session, friendship_id: int) -> Friendship | None:
+    async def get_by_id(self, db: AsyncSession, friendship_id: int) -> Friendship | None:
         stmt = select(Friendship).where(
             Friendship.id == friendship_id
         )
-        return db.execute(stmt).scalar_one_or_none()
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_between_users(
+    async def get_between_users(
         self,
-        db: Session,
+        db: AsyncSession,
         user_id: int,
         other_user_id: int,
     ) -> Friendship | None:
@@ -40,11 +41,12 @@ class FriendshipRepository:
             )
         )
 
-        return db.execute(stmt).scalar_one_or_none()
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_friends_by_user(
+    async def get_friends_by_user(
         self,
-        db: Session,
+        db: AsyncSession,
         user_id: int,
         skip: int = 0,
         limit: int = 20,
@@ -62,11 +64,12 @@ class FriendshipRepository:
             .limit(limit)
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def get_incoming_requests(
+    async def get_incoming_requests(
         self,
-        db: Session,
+        db: AsyncSession,
         user_id: int,
         skip: int = 0,
         limit: int = 20,
@@ -81,11 +84,12 @@ class FriendshipRepository:
             .limit(limit)
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def get_outgoing_requests(
+    async def get_outgoing_requests(
         self,
-        db: Session,
+        db: AsyncSession,
         user_id: int,
         skip: int = 0,
         limit: int = 20,
@@ -100,4 +104,5 @@ class FriendshipRepository:
             .limit(limit)
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()

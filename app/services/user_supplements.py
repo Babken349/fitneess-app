@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user_supplements import UserSupplement
 from app.models.users import User
@@ -29,14 +29,14 @@ class UserSupplementService:
     # CREATE
     # =========================
 
-    def create_user_supplement(
+    async def create_user_supplement(
         self,
-        db: Session,
+        db: AsyncSession,
         data: UserSupplementCreate,
         current_user: User,
     ) -> UserSupplement:
 
-        supplement = self.supplement_repo.get_by_id(
+        supplement = await self.supplement_repo.get_by_id(
             db,
             data.supplement_id,
         )
@@ -47,7 +47,7 @@ class UserSupplementService:
             )
 
         existing = (
-            self.user_supplement_repo.get_by_user_and_supplement(
+            await self.user_supplement_repo.get_by_user_and_supplement(
                 db,
                 current_user.id,
                 data.supplement_id,
@@ -70,8 +70,8 @@ class UserSupplementService:
             user_supplement,
         )
 
-        db.commit()
-        db.refresh(user_supplement)
+        await db.commit()
+        await db.refresh(user_supplement)
 
         return user_supplement
 
@@ -79,15 +79,15 @@ class UserSupplementService:
     # GET BY ID
     # =========================
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         user_supplement_id: int,
         current_user: User,
     ) -> UserSupplement:
 
         user_supplement = (
-            self.user_supplement_repo.get_by_id(
+            await self.user_supplement_repo.get_by_id(
                 db,
                 user_supplement_id,
             )
@@ -107,15 +107,15 @@ class UserSupplementService:
     # GET MY SUPPLEMENTS
     # =========================
 
-    def get_my_supplements(
+    async def get_my_supplements(
         self,
-        db: Session,
+        db: AsyncSession,
         current_user: User,
         skip: int = 0,
         limit: int = 20,
     ) -> list[UserSupplement]:
 
-        return self.user_supplement_repo.get_by_user(
+        return await self.user_supplement_repo.get_by_user(
             db,
             current_user.id,
             skip,
@@ -126,15 +126,15 @@ class UserSupplementService:
     # UPDATE
     # =========================
 
-    def update_user_supplement(
+    async def update_user_supplement(
         self,
-        db: Session,
+        db: AsyncSession,
         user_supplement_id: int,
         data: UserSupplementUpdate,
         current_user: User,
     ) -> UserSupplement:
 
-        user_supplement = self.get_by_id(
+        user_supplement = await self.get_by_id(
             db,
             user_supplement_id,
             current_user,
@@ -155,8 +155,8 @@ class UserSupplementService:
             user_supplement
         )
 
-        db.commit()
-        db.refresh(user_supplement)
+        await db.commit()
+        await db.refresh(user_supplement)
 
         return user_supplement
 
@@ -164,22 +164,22 @@ class UserSupplementService:
     # DELETE
     # =========================
 
-    def delete_user_supplement(
+    async def delete_user_supplement(
         self,
-        db: Session,
+        db: AsyncSession,
         user_supplement_id: int,
         current_user: User,
     ) -> None:
 
-        user_supplement = self.get_by_id(
+        user_supplement = await self.get_by_id(
             db,
             user_supplement_id,
             current_user,
         )
 
-        self.user_supplement_repo.delete(
+        await self.user_supplement_repo.delete(
             db,
             user_supplement,
         )
 
-        db.commit()
+        await db.commit()

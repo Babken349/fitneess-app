@@ -1,5 +1,5 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.body_weight import BodyWeight
 
@@ -8,14 +8,14 @@ class BodyWeightRepository:
     def __init__(self):
         pass
 
-    def get_by_id(self, db: Session, weight_id: int) -> BodyWeight | None:
+    async def get_by_id(self, db: AsyncSession, weight_id: int) -> BodyWeight | None:
         stmt = select(BodyWeight).where(BodyWeight.id == weight_id)
-        result = db.execute(stmt)
+        result = await db.execute(stmt)
         return result.scalar_one_or_none()
 
-    def get_by_user(
+    async def get_by_user(
         self,
-        db: Session,
+        db: AsyncSession,
         user_id: int,
         skip: int = 0,
         limit: int = 20,
@@ -27,15 +27,26 @@ class BodyWeightRepository:
             .offset(skip)
             .limit(limit)
         )
-        result = db.execute(stmt)
+        result = await db.execute(stmt)
         return result.scalars().all()
 
-    def create(self, db: Session, weight_db: BodyWeight) -> BodyWeight:
+    async def count_by_user(
+        self,
+        db:AsyncSession,
+        user_id:int,    
+    ) -> int:
+        stmt = select(func.count()).select_from(BodyWeight).where(
+            BodyWeight.user_id == user_id
+        )
+        result = await db.execute(stmt)
+        return result.scalar_one()
+
+    def create(self, db: AsyncSession, weight_db: BodyWeight) -> BodyWeight:
         db.add(weight_db)
         return weight_db
 
-    def update(self, db: Session, weight_db: BodyWeight) -> BodyWeight:
+    def update(self, db: AsyncSession, weight_db: BodyWeight) -> BodyWeight:
         return weight_db
 
-    def delete(self, db: Session, weight_db: BodyWeight) -> None:
-        db.delete(weight_db)
+    async def delete(self, db: AsyncSession, weight_db: BodyWeight) -> None:
+        await db.delete(weight_db)

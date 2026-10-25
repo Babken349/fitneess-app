@@ -1,14 +1,16 @@
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.exercise import Equipment
 
 
 class EquipmentRepository:
     
-    def get_by_id(self, db: Session, equipment_id: int) -> Equipment | None:
+    async def get_by_id(self, db: AsyncSession, equipment_id: int) -> Equipment | None:
         stmt = select(Equipment).where(Equipment.id == equipment_id)
-        return db.execute(stmt).scalar_one_or_none()
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_by_name(self, db: Session, name: str) -> Equipment | None:
+    async def get_by_name(self, db: AsyncSession, name: str) -> Equipment | None:
         stmt = select(Equipment).where(Equipment.name == name)
-        return db.execute(stmt).scalar_one_or_none()
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()

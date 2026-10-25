@@ -1,7 +1,9 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Integer, Boolean, DateTime, ForeignKey, func
+from sqlalchemy import (
+    String, Integer, Boolean, DateTime, ForeignKey, UniqueConstraint, func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -13,6 +15,10 @@ if TYPE_CHECKING:
 
 class WorkoutProgram(Base):
     __tablename__ = "workout_programs"
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="uq_workout_program_user_name"),
+    )
+    __mapper_args__ = {"eager_defaults": True}
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -20,9 +26,10 @@ class WorkoutProgram(Base):
     )
 
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
-        nullable=False,
-    )
+    ForeignKey("users.id", ondelete="CASCADE"),
+    nullable=False,
+    index=True,
+)
 
     name: Mapped[str] = mapped_column(
         String(100),

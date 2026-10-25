@@ -1,25 +1,26 @@
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.workout_session import WorkoutSession
 
 
 class WorkoutSessionRepository:
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         session_id: int,
     ) -> WorkoutSession | None:
         stmt = select(WorkoutSession).where(
             WorkoutSession.id == session_id
         )
 
-        return db.execute(stmt).scalar_one_or_none()
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_by_user(
+    async def get_by_user(
         self,
-        db: Session,
+        db: AsyncSession,
         user_id: int,
         skip: int = 0,
         limit: int = 20,
@@ -34,11 +35,12 @@ class WorkoutSessionRepository:
             .limit(limit)
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def get_by_day(
+    async def get_by_day(
         self,
-        db: Session,
+        db: AsyncSession,
         user_id: int,
         workout_day_id: int,
     ) -> list[WorkoutSession]:
@@ -51,11 +53,12 @@ class WorkoutSessionRepository:
             .order_by(WorkoutSession.started_at.desc())
         )
 
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-    def get_active_by_user(
+    async def get_active_by_user(
         self,
-        db: Session,
+        db: AsyncSession,
         user_id: int,
     ) -> WorkoutSession | None:
         stmt = (
@@ -67,11 +70,12 @@ class WorkoutSessionRepository:
             .order_by(WorkoutSession.started_at.desc())
         )
 
-        return db.execute(stmt).scalars().first()
+        result = await db.execute(stmt)
+        return result.scalars().first()
 
     def create(
         self,
-        db: Session,
+        db: AsyncSession,
         session_db: WorkoutSession,
     ) -> WorkoutSession:
         db.add(session_db)
@@ -83,9 +87,12 @@ class WorkoutSessionRepository:
     ) -> WorkoutSession:
         return session_db
 
-    def delete(
+
+
+
+    async def delete(
         self,
-        db: Session,
+        db: AsyncSession,
         session_db: WorkoutSession,
     ) -> None:
-        db.delete(session_db)
+        await db.delete(session_db)

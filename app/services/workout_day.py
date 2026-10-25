@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.users import User
 from app.models.workout_day import WorkoutDay
@@ -26,13 +26,13 @@ class WorkoutDayService:
         self.program_repo = WorkoutProgramRepository()
 
 
-    def _check_program_access(
+    async def _check_program_access(
         self,
-        db: Session,
+        db: AsyncSession,
         program_id: int,
         current_user: User,
     ):
-        program = self.program_repo.get_by_id(
+        program = await self.program_repo.get_by_id(
             db,
             program_id,
         )
@@ -46,16 +46,16 @@ class WorkoutDayService:
         return program
 
 
-    def create_day(
+    async def create_day(
         self,
-        db: Session,
+        db: AsyncSession,
         program_id: int,
         day_data: WorkoutDayCreate,
         current_user: User,
     ) -> WorkoutDay:
 
         # 1. Проверяем программу и владельца
-        self._check_program_access(
+        await self._check_program_access(
             db,
             program_id,
             current_user,
@@ -66,7 +66,7 @@ class WorkoutDayService:
             raise InvalidDayNameError(day_data.name)
 
         # 3. Проверяем дубликат названия
-        existing_day = self.day_repo.get_by_name_and_program(
+        existing_day = await self.day_repo.get_by_name_and_program(
             db,
             day_data.name,
             program_id,
@@ -76,7 +76,7 @@ class WorkoutDayService:
             raise DayAlreadyExistsError(day_data.name)
 
         # 4. Проверяем day_order
-        existing_order = self.day_repo.get_by_order_and_program(
+        existing_order = await self.day_repo.get_by_order_and_program(
             db,
             day_data.day_order,
             program_id,
@@ -100,19 +100,20 @@ class WorkoutDayService:
         )
 
         # 7. Сохраняем
-        db.commit()
-        db.refresh(new_day)
+        await db.commit()
+        await db.refresh(new_day)
 
         return new_day
 
 
-    def get_day_by_id(
+    async def get_day_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         day_id: int,
+        current_user: User,
     ) -> WorkoutDay:
 
-        day = self.day_repo.get_by_id(
+        day = await self.day_repo.get_by_id(
             db,
             day_id,
         )
@@ -120,96 +121,100 @@ class WorkoutDayService:
         if not day:
             raise DayNotFoundError(day_id)
 
+        # Проверяем владельца программы, к которой относится день
+        await self._check_program_access(
+            db,
+            day.workout_program_id,
+            current_user,
+        )
+
         return day
 
 
-    def get_days_by_program(
+    async def get_days_by_program(
         self,
-        db: Session,
+        db: AsyncSession,
         program_id: int,
         current_user: User,
     ) -> list[WorkoutDay]:
 
-        self._check_program_access(
+        await self._check_program_access(
             db,
             program_id,
             current_user,
         )
 
-        return self.day_repo.get_active_by_program(
+        return await self.day_repo.get_active_by_program(
             db,
             program_id,
         )
 
 
-    def get_archived_days(
+    async def get_archived_days(
         self,
-        db: Session,
+        db: AsyncSession,
         program_id: int,
         current_user: User,
     ) -> list[WorkoutDay]:
 
-        self._check_program_access(
+        await self._check_program_access(
             db,
             program_id,
             current_user,
         )
 
-        return self.day_repo.get_archived_by_program(
+        return await self.day_repo.get_archived_by_program(
             db,
             program_id,
         )
 
 
-    def get_active_days(
+    async def get_active_days(
         self,
-        db: Session,
+        db: AsyncSession,
         program_id: int,
         current_user: User,
     ) -> list[WorkoutDay]:
 
-        self._check_program_access(
+        await self._check_program_access(
             db,
             program_id,
             current_user,
         )
 
-        return self.day_repo.get_active_by_program(
+        return await self.day_repo.get_active_by_program(
             db,
             program_id,
         )
 
 
-    def search_days(
+    async def search_days(
         self,
-        db: Session,
+        db: AsyncSession,
         name: str,
+        current_user: User,
     ) -> list[WorkoutDay]:
 
-        return self.day_repo.search_by_name(
+        # Ищем только среди дней программ текущего пользователя
+        return await self.day_repo.search_by_name(
             db,
             name,
+            current_user.id,
         )
 
 
-    def update_day(
+    async def update_day(
         self,
-        db: Session,
+        db: AsyncSession,
         day_id: int,
         day_data: WorkoutDayUpdate,
         current_user: User,
     ) -> WorkoutDay:
 
-        # 1. Получаем день
-        day_db = self.get_day_by_id(
+        # 1-2. Получаем день и проверяем владельца программы
+        day_db = await self.get_day_by_id(
             db,
             day_id,
-        )
-
-        # 2. Проверяем владельца программы
-        self._check_program_access(
-            db,
-            day_db.workout_program_id,
             current_user,
         )
 
@@ -228,7 +233,7 @@ class WorkoutDayService:
 
             if update_data["name"] != day_db.name:
 
-                existing_day = self.day_repo.get_by_name_and_program(
+                existing_day = await self.day_repo.get_by_name_and_program(
                     db,
                     update_data["name"],
                     day_db.workout_program_id,
@@ -248,7 +253,7 @@ class WorkoutDayService:
             and update_data["day_order"] != day_db.day_order
         ):
 
-            existing_order = self.day_repo.get_by_order_and_program(
+            existing_order = await self.day_repo.get_by_order_and_program(
                 db,
                 update_data["day_order"],
                 day_db.workout_program_id,
@@ -270,59 +275,47 @@ class WorkoutDayService:
         )
 
         # 7. Сохраняем
-        db.commit()
-        db.refresh(day_db)
+        await db.commit()
+        await db.refresh(day_db)
 
         return day_db
 
 
-    def delete_day(
+    async def delete_day(
         self,
-        db: Session,
+        db: AsyncSession,
         day_id: int,
         current_user: User,
     ) -> None:
 
-        # 1. Получаем день
-        day_db = self.get_day_by_id(
+        # 1-2. Получаем день и проверяем владельца
+        day_db = await self.get_day_by_id(
             db,
             day_id,
-        )
-
-        # 2. Проверяем владельца
-        self._check_program_access(
-            db,
-            day_db.workout_program_id,
             current_user,
         )
 
         # 3. Удаляем
-        self.day_repo.delete(
+        await self.day_repo.delete(
             db,
             day_db,
         )
 
         # 4. Commit
-        db.commit()
+        await db.commit()
 
 
-    def archive_day(
+    async def archive_day(
         self,
-        db: Session,
+        db: AsyncSession,
         day_id: int,
         current_user: User,
     ) -> WorkoutDay:
 
-        # 1. Получаем день
-        day_db = self.get_day_by_id(
+        # 1-2. Получаем день и проверяем владельца
+        day_db = await self.get_day_by_id(
             db,
             day_id,
-        )
-
-        # 2. Проверяем владельца
-        self._check_program_access(
-            db,
-            day_db.workout_program_id,
             current_user,
         )
 
@@ -337,29 +330,23 @@ class WorkoutDayService:
         )
 
         # 5. Сохраняем
-        db.commit()
-        db.refresh(day_db)
+        await db.commit()
+        await db.refresh(day_db)
 
         return day_db
 
 
-    def unarchive_day(
+    async def unarchive_day(
         self,
-        db: Session,
+        db: AsyncSession,
         day_id: int,
         current_user: User,
     ) -> WorkoutDay:
 
-        # 1. Получаем день
-        day_db = self.get_day_by_id(
+        # 1-2. Получаем день и проверяем владельца
+        day_db = await self.get_day_by_id(
             db,
             day_id,
-        )
-
-        # 2. Проверяем владельца
-        self._check_program_access(
-            db,
-            day_db.workout_program_id,
             current_user,
         )
 
@@ -374,7 +361,7 @@ class WorkoutDayService:
         )
 
         # 5. Сохраняем
-        db.commit()
-        db.refresh(day_db)
+        await db.commit()
+        await db.refresh(day_db)
 
         return day_db

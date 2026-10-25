@@ -1,10 +1,11 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.users import User
 from app.models.workout_exercise import WorkoutExercise
 
 from app.repository.workout_exercise import WorkoutExerciseRepository
 from app.repository.workout_day import WorkoutDayRepository
+from app.repository.workout_program import WorkoutProgramRepository
 from app.repository.exercise import ExerciseRepository
 
 from app.schemas.workout_exercise import (
@@ -27,22 +28,22 @@ class WorkoutExerciseService:
     def __init__(self):
         self.workout_exercise_repo = WorkoutExerciseRepository()
         self.workout_day_repo = WorkoutDayRepository()
+        self.program_repo = WorkoutProgramRepository()
         self.exercise_repo = ExerciseRepository()
 
     # =========================================================
-    # CREATE
+    # INTERNAL
     # =========================================================
 
-    def create_workout_exercise(
+    async def _check_day_access(
         self,
-        db: Session,
+        db: AsyncSession,
         workout_day_id: int,
-        data: WorkoutExerciseCreate,
         current_user: User,
-    ) -> WorkoutExercise:
-
-        # 1. Проверяем, существует ли тренировочный день
-        day = self.workout_day_repo.get_by_id(
+    ):
+        # Связи day.program в async лениво не грузятся (MissingGreenlet),
+        # поэтому владельца проверяем явными запросами.
+        day = await self.workout_day_repo.get_by_id(
             db,
             workout_day_id,
         )
@@ -50,14 +51,37 @@ class WorkoutExerciseService:
         if not day:
             raise WorkoutDayNotFoundError(workout_day_id)
 
-        # 2. Проверяем, принадлежит ли день пользователю
-        # Здесь предполагается, что WorkoutDay -> WorkoutProgram
-        # и у программы есть user_id.
-        if day.program.user_id != current_user.id:
+        program = await self.program_repo.get_by_id(
+            db,
+            day.workout_program_id,
+        )
+
+        if not program or program.user_id != current_user.id:
             raise WorkoutDayAccessDeniedError()
 
+        return day
+
+    # =========================================================
+    # CREATE
+    # =========================================================
+
+    async def create_workout_exercise(
+        self,
+        db: AsyncSession,
+        workout_day_id: int,
+        data: WorkoutExerciseCreate,
+        current_user: User,
+    ) -> WorkoutExercise:
+
+        # 1-2. Проверяем день и владельца
+        await self._check_day_access(
+            db,
+            workout_day_id,
+            current_user,
+        )
+
         # 3. Проверяем существование упражнения
-        exercise = self.exercise_repo.get_by_id(
+        exercise = await self.exercise_repo.get_by_id(
             db,
             data.exercise_id,
         )
@@ -67,7 +91,7 @@ class WorkoutExerciseService:
 
         # 4. Проверяем, нет ли уже этого упражнения
         # в данном дне
-        existing = self.workout_exercise_repo.get_by_exercise_and_day(
+        existing = await self.workout_exercise_repo.get_by_exercise_and_day(
             db,
             data.exercise_id,
             workout_day_id,
@@ -81,7 +105,7 @@ class WorkoutExerciseService:
 
         # 5. Проверяем свободен ли порядок
         existing_order = (
-            self.workout_exercise_repo.get_by_order_and_day(
+            await self.workout_exercise_repo.get_by_order_and_day(
                 db,
                 data.exercise_order,
                 workout_day_id,
@@ -109,10 +133,10 @@ class WorkoutExerciseService:
         )
 
         # 8. Commit
-        db.commit()
+        await db.commit()
 
         # 9. Refresh
-        db.refresh(workout_exercise)
+        await db.refresh(workout_exercise)
 
         return workout_exercise
 
@@ -120,15 +144,15 @@ class WorkoutExerciseService:
     # GET BY ID
     # =========================================================
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         workout_exercise_id: int,
         current_user: User,
     ) -> WorkoutExercise:
 
         workout_exercise = (
-            self.workout_exercise_repo.get_by_id(
+            await self.workout_exercise_repo.get_by_id(
                 db,
                 workout_exercise_id,
             )
@@ -139,11 +163,11 @@ class WorkoutExerciseService:
                 workout_exercise_id
             )
 
-        if (
-            workout_exercise.workout_day.program.user_id
-            != current_user.id
-        ):
-            raise WorkoutDayAccessDeniedError()
+        await self._check_day_access(
+            db,
+            workout_exercise.workout_day_id,
+            current_user,
+        )
 
         return workout_exercise
 
@@ -151,27 +175,20 @@ class WorkoutExerciseService:
     # GET BY DAY
     # =========================================================
 
-    def get_by_day(
+    async def get_by_day(
         self,
-        db: Session,
+        db: AsyncSession,
         workout_day_id: int,
         current_user: User,
     ) -> list[WorkoutExercise]:
 
-        day = self.workout_day_repo.get_by_id(
+        await self._check_day_access(
             db,
             workout_day_id,
+            current_user,
         )
 
-        if not day:
-            raise WorkoutDayNotFoundError(
-                workout_day_id
-            )
-
-        if day.program.user_id != current_user.id:
-            raise WorkoutDayAccessDeniedError()
-
-        return self.workout_exercise_repo.get_by_day(
+        return await self.workout_exercise_repo.get_by_day(
             db,
             workout_day_id,
         )
@@ -180,16 +197,16 @@ class WorkoutExerciseService:
     # UPDATE
     # =========================================================
 
-    def update_workout_exercise(
+    async def update_workout_exercise(
         self,
-        db: Session,
+        db: AsyncSession,
         workout_exercise_id: int,
         data: WorkoutExerciseUpdate,
         current_user: User,
     ) -> WorkoutExercise:
 
         workout_exercise = (
-            self.workout_exercise_repo.get_by_id(
+            await self.workout_exercise_repo.get_by_id(
                 db,
                 workout_exercise_id,
             )
@@ -200,11 +217,11 @@ class WorkoutExerciseService:
                 workout_exercise_id
             )
 
-        if (
-            workout_exercise.workout_day.program.user_id
-            != current_user.id
-        ):
-            raise WorkoutDayAccessDeniedError()
+        await self._check_day_access(
+            db,
+            workout_exercise.workout_day_id,
+            current_user,
+        )
 
         update_data = data.model_dump(
             exclude_unset=True
@@ -213,7 +230,7 @@ class WorkoutExerciseService:
         # Если меняем exercise_id
         if "exercise_id" in update_data:
 
-            exercise = self.exercise_repo.get_by_id(
+            exercise = await self.exercise_repo.get_by_id(
                 db,
                 update_data["exercise_id"],
             )
@@ -224,7 +241,7 @@ class WorkoutExerciseService:
                 )
 
             existing = (
-                self.workout_exercise_repo
+                await self.workout_exercise_repo
                 .get_by_exercise_and_day(
                     db,
                     update_data["exercise_id"],
@@ -245,7 +262,7 @@ class WorkoutExerciseService:
         if "exercise_order" in update_data:
 
             existing_order = (
-                self.workout_exercise_repo
+                await self.workout_exercise_repo
                 .get_by_order_and_day(
                     db,
                     update_data["exercise_order"],
@@ -274,8 +291,8 @@ class WorkoutExerciseService:
             workout_exercise
         )
 
-        db.commit()
-        db.refresh(workout_exercise)
+        await db.commit()
+        await db.refresh(workout_exercise)
 
         return workout_exercise
 
@@ -283,15 +300,15 @@ class WorkoutExerciseService:
     # DELETE
     # =========================================================
 
-    def delete_workout_exercise(
+    async def delete_workout_exercise(
         self,
-        db: Session,
+        db: AsyncSession,
         workout_exercise_id: int,
         current_user: User,
     ) -> None:
 
         workout_exercise = (
-            self.workout_exercise_repo.get_by_id(
+            await self.workout_exercise_repo.get_by_id(
                 db,
                 workout_exercise_id,
             )
@@ -302,15 +319,15 @@ class WorkoutExerciseService:
                 workout_exercise_id
             )
 
-        if (
-            workout_exercise.workout_day.program.user_id
-            != current_user.id
-        ):
-            raise WorkoutDayAccessDeniedError()
+        await self._check_day_access(
+            db,
+            workout_exercise.workout_day_id,
+            current_user,
+        )
 
-        self.workout_exercise_repo.delete(
+        await self.workout_exercise_repo.delete(
             db,
             workout_exercise,
         )
 
-        db.commit()
+        await db.commit()

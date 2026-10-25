@@ -1,6 +1,6 @@
 # app/api/v1/auth.py
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependency import get_db
 from app.auth.dependencies import get_current_user
@@ -21,11 +21,11 @@ router = APIRouter()
     summary="Вход в систему",
     description="Логин по email/паролю. Возвращает access + refresh токены.",
 )
-def login(
+async def login(
     credentials: UserLogin,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return auth.login(
+    return await auth.login(
         db,
         credentials,
     )
@@ -37,11 +37,11 @@ def login(
     summary="Обновление токенов",
     description="Обновляет пару access/refresh токенов по refresh токену.",
 )
-def refresh_token(
+async def refresh_token(
     data: RefreshTokenRequest,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return auth.refresh_token(
+    return await auth.refresh_token(
         db,
         data,
     )
@@ -52,11 +52,11 @@ def refresh_token(
     summary="Выход из системы (текущее устройство)",
     description="Отзывает refresh‑токен (выход с текущего устройства).",
 )
-def logout(
+async def logout(
     data: RefreshTokenRequest,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    auth.logout(
+    await auth.logout(
         db,
         data,
     )
@@ -69,13 +69,15 @@ def logout(
     summary="Выход со всех устройств",
     description="Отзывает все refresh‑токены пользователя (выход со всех устройств).",
 )
-def logout_all(
+async def logout_all(
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    auth.logout_all(
+    await auth.logout_all(
         db,
         current_user,
     )
+
+
 
     return {"message": "Вы вышли со всех устройств"}

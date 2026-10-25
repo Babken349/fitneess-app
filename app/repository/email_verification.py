@@ -1,5 +1,5 @@
 from sqlalchemy import select, delete
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.email_verification_token import EmailVerificationToken
 
@@ -8,7 +8,7 @@ class RepositoryEmailVerification:
 
     def create(
         self,
-        db: Session,
+        db: AsyncSession,
         token: EmailVerificationToken,
     ) -> EmailVerificationToken:
 
@@ -16,9 +16,9 @@ class RepositoryEmailVerification:
 
         return token
 
-    def get_by_token(
+    async def get_by_token(
         self,
-        db: Session,
+        db: AsyncSession,
         token: str,
     ) -> EmailVerificationToken | None:
 
@@ -28,13 +28,13 @@ class RepositoryEmailVerification:
             EmailVerificationToken.token == token
         )
 
-        result = db.execute(stmt)
+        result = await db.execute(stmt)
 
         return result.scalar_one_or_none()
 
-    def get_by_user(
+    async def get_by_user(
         self,
-        db: Session,
+        db: AsyncSession,
         user_id: int,
     ) -> list[EmailVerificationToken]:
 
@@ -44,13 +44,13 @@ class RepositoryEmailVerification:
             EmailVerificationToken.user_id == user_id
         )
 
-        result = db.execute(stmt)
+        result = await db.execute(stmt)
 
         return result.scalars().all()
 
-    def get_active_by_user(
+    async def get_active_by_user(
         self,
-        db: Session,
+        db: AsyncSession,
         user_id: int,
     ) -> list[EmailVerificationToken]:
 
@@ -61,7 +61,7 @@ class RepositoryEmailVerification:
             EmailVerificationToken.used == False,
         )
 
-        result = db.execute(stmt)
+        result = await db.execute(stmt)
 
         return result.scalars().all()
 
@@ -72,17 +72,17 @@ class RepositoryEmailVerification:
 
         return token
 
-    def delete(
+    async def delete(
         self,
-        db: Session,
+        db: AsyncSession,
         token: EmailVerificationToken,
     ) -> None:
 
-        db.delete(token)
+        await db.delete(token)
 
-    def delete_active_by_user(
+    async def delete_active_by_user(
         self,
-        db: Session,
+        db: AsyncSession,
         user_id: int,
     ) -> None:
 
@@ -93,4 +93,4 @@ class RepositoryEmailVerification:
             EmailVerificationToken.used == False,
         )
 
-        db.execute(stmt)
+        await db.execute(stmt)

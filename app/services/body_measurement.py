@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.body_measurement import BodyMeasurement
 from app.models.users import User
@@ -22,9 +22,9 @@ class BodyMeasurementService:
     def __init__(self):
         self.measurement_repo = BodyMeasurementRepository()
 
-    def create_measurement(
+    async def create_measurement(
         self,
-        db: Session,
+        db: AsyncSession,
         data: BodyMeasurementCreate,
         current_user: User,
     ) -> BodyMeasurement:
@@ -38,17 +38,17 @@ class BodyMeasurementService:
         )
 
         new_measurement = self.measurement_repo.create(db, measurement_db)
-        db.commit()
-        db.refresh(new_measurement)
+        await db.commit()
+        await db.refresh(new_measurement)
         return new_measurement
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         measurement_id: int,
         current_user: User,
     ) -> BodyMeasurement:
-        measurement = self.measurement_repo.get_by_id(db, measurement_id)
+        measurement = await self.measurement_repo.get_by_id(db, measurement_id)
         if not measurement:
             raise BodyMeasurementNotFoundError(measurement_id)
 
@@ -57,41 +57,39 @@ class BodyMeasurementService:
 
         return measurement
 
-    def get_my_measurements(
+    async def get_my_measurements(
         self,
-        db: Session,
+        db: AsyncSession,
         current_user: User,
         skip: int = 0,
         limit: int = 20,
     ) -> list[BodyMeasurement]:
-        return self.measurement_repo.get_by_user(db, current_user.id, skip, limit)
+        return await self.measurement_repo.get_by_user(db, current_user.id, skip, limit)
 
-    def update_measurement(
+    async def update_measurement(
         self,
-        db: Session,
+        db: AsyncSession,
         measurement_id: int,
         data: BodyMeasurementUpdate,
         current_user: User,
     ) -> BodyMeasurement:
-        measurement_db = self.get_by_id(db, measurement_id, current_user)
+        measurement_db = await self.get_by_id(db, measurement_id, current_user)
 
         update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(measurement_db, key, value)
 
         self.measurement_repo.update(db, measurement_db)
-        db.commit()
-        db.refresh(measurement_db)
+        await db.commit()
+        await db.refresh(measurement_db)
         return measurement_db
 
-
-
-    def delete_measurement(
+    async def delete_measurement(
         self,
-        db: Session,
+        db: AsyncSession,
         measurement_id: int,
         current_user: User,
     ) -> None:
-        measurement_db = self.get_by_id(db, measurement_id, current_user)
-        self.measurement_repo.delete(db, measurement_db)
-        db.commit()
+        measurement_db = await self.get_by_id(db, measurement_id, current_user)
+        await self.measurement_repo.delete(db, measurement_db)
+        await db.commit()

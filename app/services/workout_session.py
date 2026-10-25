@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.users import User
 from app.models.workout_session import WorkoutSession
@@ -23,14 +23,14 @@ class WorkoutSessionService:
     # CREATE
     # =========================
 
-    def create_session(
+    async def create_session(
         self,
-        db: Session,
+        db: AsyncSession,
         session_data,
         current_user: User,
     ) -> WorkoutSession:
 
-        active_session = self.session_repo.get_active_by_user(
+        active_session = await self.session_repo.get_active_by_user(
             db,
             current_user.id,
         )
@@ -49,8 +49,8 @@ class WorkoutSessionService:
             session_db,
         )
 
-        db.commit()
-        db.refresh(session_db)
+        await db.commit()
+        await db.refresh(session_db)
 
         return session_db
 
@@ -58,14 +58,14 @@ class WorkoutSessionService:
     # GET BY ID
     # =========================
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         session_id: int,
         current_user: User,
     ) -> WorkoutSession:
 
-        session_db = self.session_repo.get_by_id(
+        session_db = await self.session_repo.get_by_id(
             db,
             session_id,
         )
@@ -84,15 +84,15 @@ class WorkoutSessionService:
     # GET MY SESSIONS
     # =========================
 
-    def get_my_sessions(
+    async def get_my_sessions(
         self,
-        db: Session,
+        db: AsyncSession,
         current_user: User,
         skip: int = 0,
         limit: int = 20,
     ) -> list[WorkoutSession]:
 
-        return self.session_repo.get_by_user(
+        return await self.session_repo.get_by_user(
             db,
             current_user.id,
             skip,
@@ -103,14 +103,14 @@ class WorkoutSessionService:
     # GET BY DAY
     # =========================
 
-    def get_by_day(
+    async def get_by_day(
         self,
-        db: Session,
+        db: AsyncSession,
         workout_day_id: int,
         current_user: User,
     ) -> list[WorkoutSession]:
 
-        return self.session_repo.get_by_day(
+        return await self.session_repo.get_by_day(
             db,
             current_user.id,
             workout_day_id,
@@ -120,13 +120,13 @@ class WorkoutSessionService:
     # GET ACTIVE
     # =========================
 
-    def get_active_session(
+    async def get_active_session(
         self,
-        db: Session,
+        db: AsyncSession,
         current_user: User,
     ) -> WorkoutSession | None:
 
-        return self.session_repo.get_active_by_user(
+        return await self.session_repo.get_active_by_user(
             db,
             current_user.id,
         )
@@ -135,15 +135,15 @@ class WorkoutSessionService:
     # UPDATE
     # =========================
 
-    def update_session(
+    async def update_session(
         self,
-        db: Session,
+        db: AsyncSession,
         session_id: int,
         session_data,
         current_user: User,
     ) -> WorkoutSession:
 
-        session_db = self.get_by_id(
+        session_db = await self.get_by_id(
             db,
             session_id,
             current_user,
@@ -163,8 +163,8 @@ class WorkoutSessionService:
             session_db
         )
 
-        db.commit()
-        db.refresh(session_db)
+        await db.commit()
+        await db.refresh(session_db)
 
         return session_db
 
@@ -172,14 +172,14 @@ class WorkoutSessionService:
     # FINISH
     # =========================
 
-    def finish_session(
+    async def finish_session(
         self,
-        db: Session,
+        db: AsyncSession,
         session_id: int,
         current_user: User,
     ) -> WorkoutSession:
 
-        session_db = self.get_by_id(
+        session_db = await self.get_by_id(
             db,
             session_id,
             current_user,
@@ -194,8 +194,8 @@ class WorkoutSessionService:
             session_db
         )
 
-        db.commit()
-        db.refresh(session_db)
+        await db.commit()
+        await db.refresh(session_db)
 
         return session_db
 
@@ -203,22 +203,22 @@ class WorkoutSessionService:
     # DELETE
     # =========================
 
-    def delete_session(
+    async def delete_session(
         self,
-        db: Session,
+        db: AsyncSession,
         session_id: int,
         current_user: User,
     ) -> None:
 
-        session_db = self.get_by_id(
+        session_db = await self.get_by_id(
             db,
             session_id,
             current_user,
         )
 
-        self.session_repo.delete(
+        await self.session_repo.delete(
             db,
             session_db,
         )
 
-        db.commit()
+        await db.commit()

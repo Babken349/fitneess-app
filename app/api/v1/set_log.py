@@ -1,8 +1,7 @@
 # app/api/v1/set_log.py
 
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
-
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_user
 from app.core.dependency import get_db
 
@@ -27,13 +26,13 @@ set_log_service = SetLogService()
     response_model=SetLogResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_set(
+async def create_set(
     exercise_log_id: int,
     data: SetLogCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return set_log_service.create_set(
+    return await set_log_service.create_set(
         db=db,
         exercise_log_id=exercise_log_id,
         data=data,
@@ -45,12 +44,12 @@ def create_set(
     "/exercise-logs/{exercise_log_id}/sets",
     response_model=list[SetLogResponse],
 )
-def get_sets(
+async def get_sets(
     exercise_log_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return set_log_service.get_by_exercise_log(
+    return await set_log_service.get_by_exercise_log(
         db=db,
         exercise_log_id=exercise_log_id,
         current_user=current_user,
@@ -61,12 +60,12 @@ def get_sets(
     "/sets/{set_log_id}",
     response_model=SetLogResponse,
 )
-def get_set(
+async def get_set(
     set_log_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return set_log_service.get_by_id(
+    return await set_log_service.get_by_id(
         db=db,
         set_log_id=set_log_id,
         current_user=current_user,
@@ -77,13 +76,13 @@ def get_set(
     "/sets/{set_log_id}",
     response_model=SetLogResponse,
 )
-def update_set(
+async def update_set(
     set_log_id: int,
     data: SetLogUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return set_log_service.update_set(
+    return await set_log_service.update_set(
         db=db,
         set_log_id=set_log_id,
         data=data,
@@ -95,12 +94,12 @@ def update_set(
     "/sets/{set_log_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_set(
+async def delete_set(
     set_log_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    set_log_service.delete_set(
+    await set_log_service.delete_set(
         db=db,
         set_log_id=set_log_id,
         current_user=current_user,

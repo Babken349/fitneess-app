@@ -1,5 +1,5 @@
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.supplements import Supplement
 
@@ -8,7 +8,7 @@ class SupplementRepository:
 
     def create(
         self,
-        db: Session,
+        db: AsyncSession,
         supplement: Supplement,
     ) -> Supplement:
         db.add(supplement)
@@ -20,64 +20,57 @@ class SupplementRepository:
     ) -> Supplement:
         return supplement
 
-    def delete(
+    async def delete(
         self,
-        db: Session,
+        db: AsyncSession,
         supplement: Supplement,
     ) -> None:
-        db.delete(supplement)
+        await db.delete(supplement)
 
-    def get_by_id(
+    async def get_by_id(
         self,
-        db: Session,
+        db: AsyncSession,
         supplement_id: int,
     ) -> Supplement | None:
-
         stmt = select(Supplement).where(
             Supplement.id == supplement_id
         )
-
-        result = db.execute(stmt)
-
+        result = await db.execute(stmt)
         return result.scalar_one_or_none()
 
-    def get_by_name(
+    async def get_by_name(
         self,
-        db: Session,
+        db: AsyncSession,
         name: str,
     ) -> Supplement | None:
-
         stmt = select(Supplement).where(
             Supplement.name == name
         )
-
-        result = db.execute(stmt)
-
+        result = await db.execute(stmt)
         return result.scalar_one_or_none()
 
-    def exists_by_name(
+    async def exists_by_name(
         self,
-        db: Session,
+        db: AsyncSession,
         name: str,
     ) -> bool:
-
-        stmt = select(Supplement).where(
+        stmt = select(Supplement.id).where(
             Supplement.name == name
-        )
+        ).limit(1)
+        result = await db.execute(stmt)
+        return result.first() is not None
 
-        return db.execute(stmt).scalar_one_or_none() is not None
-
-    def get_all(
+    async def get_all(
         self,
-        db: Session,
+        db: AsyncSession,
         skip: int = 0,
         limit: int = 20,
     ) -> list[Supplement]:
-
         stmt = (
             select(Supplement)
+            .order_by(Supplement.id)
             .offset(skip)
             .limit(limit)
         )
-
-        return db.execute(stmt).scalars().all()
+        result = await db.execute(stmt)
+        return result.scalars().all()

@@ -1,2 +1,18 @@
-[tool.fastapi]
-entrypoint = "app.main:app"
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+pythonpath = ["."]  
+asyncio_mode = "auto"
+addopts = "-ra --import-mode=importlib"
+markers = [
+    "smoke: быстрые проверки, что эндпоинт жив",
+    "critical: безопасность, права доступа, деньги",
+    "integration: тесты с реальной тестовой БД",
+]
+filterwarnings = [
+    "ignore:'crypt' is deprecated:DeprecationWarning",
+]
+[tool.coverage.run]
+branch = true
+source = ["app"]

@@ -15,7 +15,11 @@ class WorkoutSession(Base):
     __tablename__ = "workout_sessions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(
+    ForeignKey("users.id", ondelete="CASCADE"),
+    nullable=False,
+    index=True,
+)
     workout_day_id: Mapped[int | None] = mapped_column(ForeignKey("workout_days.id"), nullable=True)
 
     started_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

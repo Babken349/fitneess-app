@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependency import get_db
 
@@ -21,11 +21,11 @@ service = SupplementService()
     response_model=SupplementResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_supplement(
+async def create_supplement(
     data: SupplementCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.create_supplement(
+    return await service.create_supplement(
         db,
         data,
     )
@@ -35,12 +35,12 @@ def create_supplement(
     "/",
     response_model=list[SupplementResponse],
 )
-def get_all_supplements(
+async def get_all_supplements(
     skip: int = 0,
     limit: int = 20,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.get_all(
+    return await service.get_all(
         db,
         skip,
         limit,
@@ -51,11 +51,11 @@ def get_all_supplements(
     "/{supplement_id}",
     response_model=SupplementResponse,
 )
-def get_supplement_by_id(
+async def get_supplement_by_id(
     supplement_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.get_by_id(
+    return await service.get_by_id(
         db,
         supplement_id,
     )
@@ -65,12 +65,12 @@ def get_supplement_by_id(
     "/{supplement_id}",
     response_model=SupplementResponse,
 )
-def update_supplement(
+async def update_supplement(
     supplement_id: int,
     data: SupplementUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return service.update_supplement(
+    return await service.update_supplement(
         db,
         supplement_id,
         data,
@@ -81,11 +81,11 @@ def update_supplement(
     "/{supplement_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_supplement(
+async def delete_supplement(
     supplement_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    service.delete_supplement(
+    await service.delete_supplement(
         db,
         supplement_id,
     )
