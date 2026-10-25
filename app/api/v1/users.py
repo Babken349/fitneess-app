@@ -56,7 +56,7 @@ async def logout_refresh_token(
     return {"message": "Successfully logged out"}
 
 
-@router.get("/{user_id}", response_model=UserResponse, status_code=200)
+@router.get("/{user_id}", response_model=UserResponse, status_code=200, dependencies=[Depends(require_admin)])
 async def get_user(
     user_id: int,
     db: AsyncSession = Depends(get_db),

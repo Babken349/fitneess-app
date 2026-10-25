@@ -1,3 +1,4 @@
+from app.core.enums import UserRole
 from datetime import datetime
 from app.utils.validators import validate_new_password, StrippedStr  # <-- Импортируем тип отсюда!
 from pydantic import BaseModel, Field, field_validator, EmailStr, ConfigDict, HttpUrl
@@ -33,6 +34,7 @@ class UserResponse(BaseModel):
     
     is_active: bool
     is_verified: bool
+    role: UserRole
     
     last_login: datetime | None = None
     premium_until: datetime | None = None

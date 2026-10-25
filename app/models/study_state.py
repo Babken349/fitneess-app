@@ -45,9 +45,9 @@ class StudyState(Base):
     )
 
     concentration: Mapped[int] = mapped_column(Integer, nullable=False)
-    energy: Mapped[int] = mapped_column(Integer, nullable=False)
-    fatigue: Mapped[int] = mapped_column(Integer, nullable=False)
-    motivation: Mapped[int] = mapped_column(Integer, nullable=False)
+    energy: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    fatigue: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    motivation: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 

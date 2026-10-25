@@ -4,10 +4,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class StudyStateCreate(BaseModel):
-    concentration: int = Field(ge=1, le=10)
-    energy: int = Field(ge=1, le=10)
-    fatigue: int = Field(ge=1, le=10)
-    motivation: int = Field(ge=1, le=10)
+    concentration: int = Field(ge=1, le=5)
+    energy: int | None = Field(default=None, ge=1, le=5)
+    fatigue: int | None = Field(default=None, ge=1, le=5)
+    motivation: int | None = Field(default=None, ge=1, le=5)
 
     subject: str = Field(default="", max_length=100)
     duration_minutes: int | None = Field(default=None, ge=1, le=720)
