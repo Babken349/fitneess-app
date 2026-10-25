@@ -122,3 +122,21 @@ docker compose run --rm backend pytest -q   # тесты проходят на �
 ```
 
 Последняя проверка связывает все сервисы: фронтенд с backend через CORS, backend с базой через миграции и тесты.
+
+## Демо-данные (seed)
+
+```bash
+docker compose exec backend python -m app.seed
+```
+
+Скрипт можно запускать повторно: существующее не дублируется. Создаёт справочник упражнений, программу «Базовая» (три тренировки) и данные за 14 дней для `demo_athlete`.
+
+| Логин | Email | Роль |
+|---|---|---|
+| demo_athlete | athlete@example.com | участник с данными за 14 дней и программой |
+| demo_empty | empty@example.com | участник без данных |
+| demo_researcher | researcher@example.com | исследователь |
+| demo_admin | admin@example.com | администратор |
+| demo_unverified | unverified@example.com | email не подтверждён |
+
+Пароль для всех: `DemoPass123!` (можно задать своим через `SEED_PASSWORD`). Вход по логину или email. Только для локальной разработки.
