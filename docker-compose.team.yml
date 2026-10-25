@@ -1,0 +1,65 @@
+# docker-compose.team.yml: запуск готового образа backend для разработки фронтенда.
+# Исходный код и .env не нужны, достаточно этого файла и Docker.
+#
+#   docker compose -f docker-compose.team.yml up -d
+#   Swagger: http://localhost:8000/docs
+#
+# Обновить до свежей версии:
+#   docker compose -f docker-compose.team.yml pull
+#   docker compose -f docker-compose.team.yml up -d
+#
+# Сбросить базу к демо-данным:
+#   docker compose -f docker-compose.team.yml down -v
+#   docker compose -f docker-compose.team.yml up -d
+#
+# Только для локальной разработки: пароли и ключ ниже не для production.
+name: fitness-team
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fitness}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fitness_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-fitness}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  backend:
+    # Подставьте логин владельца образа на Docker Hub (или переменную BACKEND_IMAGE)
+    image: ${BACKEND_IMAGE:-babken349/fitness-backend:latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-fitness}:${POSTGRES_PASSWORD:-fitness_dev}@db:5432/${POSTGRES_DB:-fitness}
+      SECRET_KEY: ${SECRET_KEY:-dev-only-secret-not-for-production}
+      RESEND_API_KEY: ${RESEND_API_KEY:-re_dev_stub}
+      EMAIL_FROM: ${EMAIL_FROM:-dev@example.com}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5500}
+      # адреса фронтенда: Live Server 5500, Vite 5173, 3000, nginx 8080
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5500,http://127.0.0.1:5500,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://localhost:8080}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    # Миграции, демо-данные (повторный запуск ничего не дублирует), затем сервер
+    command:
+      - sh
+      - -c
+      - alembic upgrade head && (python -m app.seed || echo "seed пропущен") && exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+volumes:
+  pgdata:
